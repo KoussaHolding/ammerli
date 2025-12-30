@@ -1,0 +1,96 @@
+services:
+  ammerli:
+    container_name: ammerli
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.docker
+    ports:
+      - '3000:3000'
+    networks:
+      - ammerli-network
+
+  ammerli-db:
+    image: postgres:16
+    container_name: ammerli-postgres
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ammerli_postgres
+      POSTGRES_USER: ammerli
+      POSTGRES_PASSWORD: ammerli
+      TZ: 'UTC'
+    ports:
+      - '25432:5432'
+    networks:
+      - ammerli-network
+
+  ammerli-redis:
+    image: redis/redis-stack:latest
+    container_name: ammerli-redis
+    restart: always
+    ports:
+      - '6379:6379'
+      - '8001:8001'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+    environment:
+      REDIS_ARGS: '--requirepass ammerliredispassword'
+    networks:
+      - ammerli-network
+
+  ammerli-maildev:
+    container_name: ammerli-mail-dev
+    build:
+      context: .
+      dockerfile: maildev.Dockerfile
+    ports:
+      - ${MAIL_CLIENT_PORT}:1080
+      - ${MAIL_PORT}:1025
+    networks:
+      - ammerli-network
+
+  ammerli-zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: ammerli-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - ammerli-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: ammerli-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - '9092:9092'
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # Essential: Maps the protocol to the listener name
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      # Advertised listeners: how clients reach the broker
+      # 1. localhost for your NestJS app running on your Mac/Windows
+      # 2. ammerli-kafka for other containers inside the docker network
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://ammerli-kafka:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - ammerli-network
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  redis_data:
+
+networks:
+  ammerli-network:
+    driver: bridge

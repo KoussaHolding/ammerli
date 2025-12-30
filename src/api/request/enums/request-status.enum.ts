@@ -1,0 +1,6 @@
+export enum RequestStatus {
+  SEARCHING = 'SEARCHING',
+  ACCEPTED = 'ACCEPTED',
+  EXPIRED = 'EXPIRED',
+  CANCELLED = 'CANCELLED',
+}
