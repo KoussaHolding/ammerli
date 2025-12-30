@@ -12,12 +12,6 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "env-cmd typeorm-ts-node-commonjs -d src/database/data-source.ts",
     "migration:up": "pnpm typeorm migration:run",
     "migration:down": "pnpm typeorm migration:revert",
@@ -78,17 +72,12 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "...": "link:...",
-    "@commitlint/cli": "^20.2.0",
-    "@commitlint/config-conventional": "^20.2.0",
-    "@eslint/js": "^9.39.2",
     "@nestjs/cli": "^11.0.14",
     "@nestjs/schematics": "^11.0.9",
     "@nestjs/testing": "^11.1.11",
     "@swc/cli": "^0.7.9",
     "@swc/core": "^1.15.7",
     "@types/compression": "^1.8.1",
-    "@types/eslint__js": "^9.14.0",
     "@types/express": "^5.0.6",
     "@types/ioredis": "^5.0.0",
     "@types/jest": "^30.0.0",
@@ -99,12 +88,8 @@
     "@types/supertest": "^6.0.3",
     "@types/uuid": "^11.0.0",
     "env-cmd": "^11.0.0",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
     "husky": "^9.1.7",
     "jest": "^30.2.0",
-    "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "prettier-plugin-organize-imports": "^4.3.0",
     "sass-embedded": "^1.97.1",
@@ -114,7 +99,6 @@
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.51.0"
+    "typescript": "^5.9.3"
   }
 }
