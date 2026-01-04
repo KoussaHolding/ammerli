@@ -1,5 +1,6 @@
 import { DispatchService } from '@/api/dispatch/dispatch.service';
 import { RequestResDto } from '@/api/request/dto/request.res.dto';
+import { RequestStatusEnum } from '@/api/request/enums/request-status.enum';
 import { KafkaConsumer, KafkaProcessor } from '@sawayo/kafka-nestjs';
 import { EachMessagePayload } from 'kafkajs';
 
@@ -20,12 +21,14 @@ export class RequestConsumer {
     message: RequestResDto,
     payload: EachMessagePayload,
   ) {
-    console.log(
-      await this.dispatchService.findDrivers({
-        lat: message.pickupLat,
-        lng: message.pickupLng,
-        radiusKm: 200000,
-      }),
-    );
+    await this.dispatchService.dispatchRequest({
+      id: message.id,
+      quantity: message.quantity,
+      status: RequestStatusEnum.DISPATCHED,
+      type: message.type,
+      user: message.user,
+      pickupLat: message.pickupLat,
+      pickupLng: message.pickupLng,
+    });
   }
 }

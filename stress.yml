@@ -1,0 +1,16 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 50
+scenarios:
+  - flow:
+      - post:
+          url: "/api/requests"
+          json:
+            pickupLat: 36.7525
+            pickupLng: 3.042
+            quantity: 5
+            type: "BYLITER"
+            note: "Please call when you arrive"
+

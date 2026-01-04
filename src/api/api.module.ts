@@ -8,6 +8,7 @@ import { UserModule } from './user/user.module';
 
 import { RequestModule } from '@/api/request/request.module';
 import { TrackingModule } from '@/api/tracking/tracking.module';
+import { ClientModule } from './client/client.module';
 import { DispatchModule } from './dispatch/dispatch.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { DispatchModule } from './dispatch/dispatch.module';
     AuthModule,
     HomeModule,
     DriverModule,
+    ClientModule,
     TrackingModule,
     RequestModule,
     DispatchModule,

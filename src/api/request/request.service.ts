@@ -1,32 +1,40 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 
+import { Uuid } from '@/common/types/common.type';
+import { RedisConstants } from '@/constants/redis.constants';
 import { KafkaProducerService } from '@sawayo/kafka-nestjs';
+import Redis from 'ioredis';
 import { UserResDto } from '../user/dto/user.res.dto';
-import { UserService } from '../user/user.service';
 import { CreateRequestDto } from './dto/create-request.dto';
-import { RequestResDto } from './dto/request.res.dto';
+import { RequestStatusEnum } from './enums/request-status.enum';
 
 @Injectable()
 export class RequestService {
   constructor(
     private readonly kafkaProducer: KafkaProducerService,
-    private readonly userService: UserService,
+    @Inject('REDIS_CLIENT') private readonly redis: Redis,
   ) {}
 
-  async createRequest(
-    dto: CreateRequestDto,
-    user: UserResDto,
-  ): Promise<RequestResDto> {
-    const requestId = uuidv4();
+  async createRequest(dto: CreateRequestDto, user: UserResDto) {
+    const requestId = uuidv4() as Uuid;
+    const redisKey = `${RedisConstants.KEYS.REQUESTS_INDEX}:${requestId}`;
+
+    const existingRequest = await this.redis.get(redisKey);
+
+    if (existingRequest) {
+      return JSON.parse(existingRequest);
+    }
 
     const requestPayload = {
       id: requestId,
-      ...dto,
-      status: 'SEARCHING',
+      status: RequestStatusEnum.SEARCHING,
       createdAt: new Date(),
       user,
+      ...dto,
     };
+
+    await this.redis.set(redisKey, JSON.stringify(requestPayload), 'EX', 300);
 
     this.kafkaProducer.send({
       topic: 'request.created',
@@ -36,10 +44,5 @@ export class RequestService {
         },
       ],
     });
-
-    return {
-      ...requestPayload,
-      user,
-    };
   }
 }

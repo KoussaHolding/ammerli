@@ -1,7 +1,9 @@
 import {
+  EnumField,
   NumberField,
   StringFieldOptional,
 } from '@/decorators/field.decorators';
+import { RequestTypeEnum } from '../enums/request-type.enum';
 
 export class CreateRequestDto {
   @NumberField({
@@ -31,7 +33,12 @@ export class CreateRequestDto {
     example: 5,
     description: 'Quantity of water units (e.g., 5L bottles)',
   })
-  waterQuantity!: number;
+  quantity!: number;
+
+  @EnumField(() => RequestTypeEnum, {
+    description: 'Type of the request',
+  })
+  type: RequestTypeEnum;
 
   @StringFieldOptional({
     maxLength: 200,

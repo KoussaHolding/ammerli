@@ -19,7 +19,7 @@ import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { DriverService } from './driver.service';
 import { DriverResDto } from './dto/driver.res.dto';
 import { ListDriverReqDto } from './dto/list-driver.req.dto';
-import { LoadMoreDriversReqDto } from './dto/load-more-users.req.dto';
+import { LoadMoreDriversReqDto } from './dto/load-more-drivers.req.dto';
 import { RegisterDriverReqDto } from './dto/register-driver.req.dto';
 import { UpdateDriverReqDto } from './dto/update-driver.req.dto';
 

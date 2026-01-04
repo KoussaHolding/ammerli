@@ -17,6 +17,6 @@ export class FindDriversDto {
 
   @NumberFieldOptional()
   @Min(0.1)
-  @Max(100) // Enterprise limit: Don't let users scan the whole world (perf protection)
-  radiusKm?: number = 5; // Default value
+  @Max(100)
+  radiusKm?: number = 5;
 }

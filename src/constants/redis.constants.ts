@@ -10,6 +10,8 @@ export const RedisConstants = {
     // Patterns (For use in @Decorators)
     // We strictly define the pattern string here so it matches the generator logic
     LOCK_DRIVER_UPDATE_PATTERN: 'locks:driver:update:{0}',
+
+    REQUESTS_INDEX: 'requests',
   },
 
   // === TIME TO LIVE (Seconds/Milliseconds) ===

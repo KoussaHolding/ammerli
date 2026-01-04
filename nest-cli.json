@@ -8,8 +8,7 @@
     "deleteOutDir": true,
     "assets": [
       { "include": "i18n/**/*", "watchAssets": true },
-      { "include": "**/*.hbs", "watchAssets": true },
-      { "include": "certs/**/*", "watchAssets": true }
+      { "include": "**/*.hbs", "watchAssets": true }
     ]
   }
 }

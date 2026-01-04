@@ -1,5 +1,6 @@
-export enum RequestStatus {
+export enum RequestStatusEnum {
   SEARCHING = 'SEARCHING',
+  DISPATCHED = 'DISPATCHED',
   ACCEPTED = 'ACCEPTED',
   EXPIRED = 'EXPIRED',
   CANCELLED = 'CANCELLED',

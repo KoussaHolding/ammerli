@@ -78,7 +78,10 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(reflector));
 
   if (isDevelopment) {
-    setupSwagger(app);
+    setupSwagger(
+      app,
+      configService.getOrThrow('app.apiPrefix', { infer: true }),
+    );
   }
 
   await app.listen(configService.getOrThrow('app.port', { infer: true }));
