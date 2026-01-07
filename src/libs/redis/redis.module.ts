@@ -14,6 +14,7 @@ import { DistributedLockService } from './distributed-lock.service';
         config: {
           host: configService.get('redis.host'),
           port: configService.get('redis.port'),
+          username: configService.get('redis.username'),
           password: configService.get('redis.password'),
           retryStrategy: (times) => Math.min(times * 50, 2000),
         },

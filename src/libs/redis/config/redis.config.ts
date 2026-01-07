@@ -25,6 +25,10 @@ class EnvironmentVariablesValidator {
 
   @IsString()
   @IsOptional()
+  REDIS_USERNAME: string;
+
+  @IsString()
+  @IsOptional()
   REDIS_PASSWORD: string;
 
   @IsBoolean()
@@ -40,6 +44,7 @@ export default registerAs<RedisConfig>('redis', () => {
     host: process.env.REDIS_HOST,
     port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379,
     password: process.env.REDIS_PASSWORD,
+    username: process.env.REDIS_USERNAME,
     tlsEnabled: process.env.REDIS_TLS_ENABLED === 'true',
   };
 });
