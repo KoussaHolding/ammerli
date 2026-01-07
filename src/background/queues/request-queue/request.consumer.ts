@@ -1,26 +1,19 @@
 import { DispatchService } from '@/api/dispatch/dispatch.service';
 import { RequestResDto } from '@/api/request/dto/request.res.dto';
 import { RequestStatusEnum } from '@/api/request/enums/request-status.enum';
-import { KafkaConsumer, KafkaProcessor } from '@sawayo/kafka-nestjs';
-import { EachMessagePayload } from 'kafkajs';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
+import { Injectable } from '@nestjs/common';
 
-@KafkaProcessor()
+@Injectable()
 export class RequestConsumer {
   constructor(private readonly dispatchService: DispatchService) {}
 
-  @KafkaConsumer({
-    subscribe: {
-      topics: ['request.created'],
-      fromBeginning: true,
-    },
-    consumerConfig: {
-      groupId: 'water-delivery',
-    },
+  @RabbitSubscribe({
+    exchange: 'requests',
+    routingKey: 'request.created',
+    queue: 'process-request-queue',
   })
-  async handleRequestCreated(
-    message: RequestResDto,
-    payload: EachMessagePayload,
-  ) {
+  async handleRequestCreated(message: RequestResDto) {
     await this.dispatchService.dispatchRequest({
       id: message.id,
       quantity: message.quantity,

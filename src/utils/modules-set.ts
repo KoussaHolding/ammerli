@@ -6,12 +6,9 @@ import { AllConfigType } from '@/config/config.type';
 import { Environment } from '@/constants/app.constant';
 import databaseConfig from '@/database/config/database.config';
 import { TypeOrmConfigService } from '@/database/typeorm-config.service';
-import kafkaConfig from '@/libs/kafka/config/kafka.config';
-import { KafkaLibModule } from '@/libs/kafka/kafka.module';
+import { RabbitMqLibModule } from '@/libs/rabbitMq/rabbitMq.module';
 import redisConfig from '@/libs/redis/config/redis.config';
 import { RedisLibModule } from '@/libs/redis/redis.module';
-import mailConfig from '@/mail/config/mail.config';
-import { MailModule } from '@/mail/mail.module';
 import { BullModule } from '@nestjs/bullmq';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ModuleMetadata } from '@nestjs/common';
@@ -33,14 +30,7 @@ function generateModulesSet() {
   const imports: ModuleMetadata['imports'] = [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [
-        appConfig,
-        databaseConfig,
-        redisConfig,
-        authConfig,
-        mailConfig,
-        kafkaConfig,
-      ],
+      load: [appConfig, databaseConfig, redisConfig, authConfig],
       envFilePath: ['.env'],
     }),
   ];
@@ -146,9 +136,8 @@ function generateModulesSet() {
         dbModule,
         i18nModule,
         loggerModule,
-        MailModule,
         RedisLibModule,
-        KafkaLibModule,
+        RabbitMqLibModule,
       ];
       break;
     case 'api':
@@ -159,9 +148,8 @@ function generateModulesSet() {
         dbModule,
         i18nModule,
         loggerModule,
-        MailModule,
         RedisLibModule,
-        KafkaLibModule,
+        RabbitMqLibModule,
       ];
       break;
     case 'background':
@@ -173,7 +161,7 @@ function generateModulesSet() {
         i18nModule,
         loggerModule,
         RedisLibModule,
-        KafkaLibModule,
+        RabbitMqLibModule,
       ];
       break;
     default:

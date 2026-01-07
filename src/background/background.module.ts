@@ -1,10 +1,9 @@
 import { DispatchModule } from '@/api/dispatch/dispatch.module';
 import { Module } from '@nestjs/common';
 
-import { RequestConsumer } from './kafka/request.consumer';
-import { EmailQueueModule } from './queues/email-queue/email-queue.module';
+import { RequestConsumer } from './queues/request-queue/request.consumer';
 @Module({
-  imports: [EmailQueueModule, DispatchModule],
+  imports: [DispatchModule],
   providers: [RequestConsumer],
 })
 export class BackgroundModule {}

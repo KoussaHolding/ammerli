@@ -17,29 +17,33 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    if (context.getType() === 'http') {
+      const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
+        context.getHandler(),
+        context.getClass(),
+      ]);
 
-    if (isPublic) return true;
+      if (isPublic) return true;
 
-    const isAuthOptional = this.reflector.getAllAndOverride<boolean>(
-      IS_AUTH_OPTIONAL,
-      [context.getHandler(), context.getClass()],
-    );
+      const isAuthOptional = this.reflector.getAllAndOverride<boolean>(
+        IS_AUTH_OPTIONAL,
+        [context.getHandler(), context.getClass()],
+      );
 
-    const request = context.switchToHttp().getRequest();
-    const accessToken = this.extractTokenFromHeader(request);
+      const request = context.switchToHttp().getRequest();
+      const accessToken = this.extractTokenFromHeader(request);
 
-    if (isAuthOptional && !accessToken) {
+      if (isAuthOptional && !accessToken) {
+        return true;
+      }
+      if (!accessToken) {
+        throw new UnauthorizedException();
+      }
+
+      request['user'] = await this.authService.verifyAccessToken(accessToken);
+
       return true;
     }
-    if (!accessToken) {
-      throw new UnauthorizedException();
-    }
-
-    request['user'] = await this.authService.verifyAccessToken(accessToken);
 
     return true;
   }

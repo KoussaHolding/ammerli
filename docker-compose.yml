@@ -55,37 +55,6 @@ services:
     networks:
       - ammerli-network
 
-  ammerli-zookeeper:
-    image: confluentinc/cp-zookeeper:7.4.0
-    container_name: ammerli-zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - ammerli-network
-
-  kafka:
-    image: confluentinc/cp-kafka:7.4.0
-    container_name: ammerli-kafka
-    depends_on:
-      - zookeeper
-    ports:
-      - '9092:9092'
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      # Essential: Maps the protocol to the listener name
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      # Advertised listeners: how clients reach the broker
-      # 1. localhost for your NestJS app running on your Mac/Windows
-      # 2. ammerli-kafka for other containers inside the docker network
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://ammerli-kafka:29092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_INTERNAL://0.0.0.0:29092
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    networks:
-      - ammerli-network
-
 volumes:
   postgres_data:
   pgadmin_data:

@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
 
-import { KafkaLibModule } from '@/libs/kafka/kafka.module';
 import { RedisModule } from '@liaoliaots/nestjs-redis';
+import { RequestCacheRepository } from './request-cache.repository';
 import { RequestController } from './request.controller';
-import { RequestRepository } from './request.repository';
 import { RequestService } from './request.service';
 
 @Module({
-  imports: [KafkaLibModule, RedisModule],
+  imports: [RedisModule],
   controllers: [RequestController],
-  providers: [RequestService, RequestRepository],
-  exports: [RequestService, RequestRepository],
+  providers: [RequestService, RequestCacheRepository],
+  exports: [RequestService],
 })
 export class RequestModule {}

@@ -2,42 +2,38 @@ import { ErrorCode } from '@/constants/error-code.constant';
 import { RedisConstants } from '@/constants/redis.constants';
 import { Instrument } from '@/decorators/instrument.decorator';
 import { AppException } from '@/exceptions/app.exception';
-import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
-import { KafkaProducerService } from '@sawayo/kafka-nestjs';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { Inject, Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
+import { AppLogger } from 'src/logger/logger.service';
 import { RequestResDto } from '../request/dto/request.res.dto';
 import { RequestStatusEnum } from '../request/enums/request-status.enum';
-import { RequestRepository } from '../request/request.repository';
+import { RequestService } from '../request/request.service';
 import { DriverLocationResDto } from '../tracking/dto/driver-location.res.dto';
-import { FindDriversDto } from '../tracking/dto/find-drivers.dto';
 
 @Injectable()
 export class DispatchService {
-  private readonly logger = new Logger(DispatchService.name);
-
   constructor(
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
-    private readonly kafkaProducer: KafkaProducerService,
-    private readonly requestRepository: RequestRepository,
-  ) {}
+    private readonly amqpConnection: AmqpConnection,
+    private readonly requestService: RequestService,
+    private readonly logger: AppLogger,
+  ) {
+    this.logger.setContext(this.constructor.name);
+  }
 
   /**
-   * Main entry point: Finds nearby drivers and initiates the dispatch process.
+   * Main entry point: Dispatches a request to nearby drivers.
    */
   @Instrument({ performanceThreshold: 200 })
-  async dispatchRequest(params: RequestResDto) {
-    const redisKey = `${RedisConstants.KEYS.REQUESTS_INDEX}:${params.id}`;
+  async dispatchRequest(
+    params: RequestResDto,
+  ): Promise<DriverLocationResDto[]> {
+    const request = await this.requestService.getRequestFromCache(params.id);
+    const candidates = await this.findNearbyDrivers(request);
 
-    const request = await this.requestRepository.findById(redisKey);
-
-    const candidates = await this.getNearbyCandidates({
-      lat: request.pickupLat,
-      lng: request.pickupLng,
-      radiusKm: 2,
-    });
-
-    if (candidates.length === 0) {
-      this.logger.log(
+    if (!candidates.length) {
+      this.logger.warn(
         `No drivers found for request at [${request.pickupLat}, ${request.pickupLng}]`,
       );
       return [];
@@ -45,50 +41,51 @@ export class DispatchService {
 
     const { active, ghosts } = await this.filterActiveDrivers(candidates);
 
-    if (ghosts.length > 0) {
-      this.removeStaleDrivers(ghosts).catch((err) =>
-        this.logger.error(`Cleanup failed: ${err.message}`),
-      );
-    }
+    if (ghosts.length) await this.removeStaleDrivers(ghosts);
 
-    if (active.length === 0) return [];
+    if (!active.length) return [];
 
-    request.status = RequestStatusEnum.DISPATCHED;
+    await this.markRequestDispatched(request);
+    await this.emitDispatchEvent(request, active);
 
-    await this.requestRepository.save(request);
+    this.logger.log(
+      `Request ${request.id} dispatched to ${active.length} drivers`,
+    );
 
-    await this.emitDispatchEvents(request, active);
+    return active;
   }
 
   /**
-   * Fetches raw driver IDs within the geospatial radius.
+   * Finds nearby driver candidates using Redis geospatial query.
    */
-  private async getNearbyCandidates(
-    params: FindDriversDto,
+  private async findNearbyDrivers(
+    request: RequestResDto,
   ): Promise<[string, string][]> {
     try {
       return (await this.redis.georadius(
         RedisConstants.KEYS.DRIVERS_GEO_INDEX,
-        params.lng,
-        params.lat,
-        params.radiusKm,
+        request.pickupLng,
+        request.pickupLat,
+        2,
         RedisConstants.CMD.UNIT_KM,
         RedisConstants.CMD.WITH_DIST,
         RedisConstants.CMD.SORT_ASC,
       )) as unknown as [string, string][];
     } catch (error) {
-      throw new AppException(
-        ErrorCode.S002,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        error,
+      this.logger.error(
+        `Failed to find nearby drivers: ${error.message}`,
+        error.stack,
       );
+      throw new AppException(ErrorCode.S002, error.status || 500, error);
     }
   }
 
   /**
-   * Uses a Redis pipeline to check which drivers have active session metadata.
+   * Filters candidates into active drivers and stale (ghost) drivers.
    */
   private async filterActiveDrivers(candidates: [string, string][]) {
+    if (!candidates.length) return { active: [], ghosts: [] };
+
     const pipeline = this.redis.pipeline();
     candidates.forEach(([id]) =>
       pipeline.exists(RedisConstants.KEYS.driverMetadata(id)),
@@ -100,46 +97,64 @@ export class DispatchService {
     const ghosts: string[] = [];
 
     candidates.forEach(([driverId, distance], index) => {
-      // ioredis pipeline results format: [error, result]
       const isAlive = results[index][1] === 1;
-      if (isAlive) {
-        active.push({ driverId, distanceKm: parseFloat(distance) });
-      } else {
-        ghosts.push(driverId);
-      }
+      if (isAlive) active.push({ driverId, distanceKm: parseFloat(distance) });
+      else ghosts.push(driverId);
     });
+
+    this.logger.debug(
+      `Filtered ${active.length} active drivers, ${ghosts.length} stale drivers`,
+    );
 
     return { active, ghosts };
   }
 
   /**
-   * Centralizes the notification/event emission logic.
+   * Marks the request as dispatched in cache/database.
    */
-  private async emitDispatchEvents(
-    params: RequestResDto,
+  private async markRequestDispatched(request: RequestResDto) {
+    request.status = RequestStatusEnum.DISPATCHED;
+    await this.requestService.updateRequest(request.id, request);
+    this.logger.log(`Request ${request.id} marked as DISPATCHED`);
+  }
+
+  /**
+   * Emits the dispatch event to Kafka.
+   */
+  private async emitDispatchEvent(
+    request: RequestResDto,
     drivers: DriverLocationResDto[],
   ) {
     try {
-      await this.kafkaProducer.send({
-        topic: 'request.dispatched',
-        messages: [
-          {
-            key: params.id,
-            value: JSON.stringify({
-              searchCriteria: params,
-              matchedDrivers: drivers,
-              timestamp: new Date().toISOString(),
-            }),
-          },
-        ],
+      await this.amqpConnection.publish('requests', 'request.dispatched', {
+        ...request,
+        matchedDrivers: drivers,
+        status: RequestStatusEnum.DISPATCHED,
       });
+      this.logger.log(`Kafka dispatch event sent for request ${request.id}`);
     } catch (error) {
-      // We log but don't necessarily block the response unless dispatch is critical
-      this.logger.error(`Failed to emit dispatch event: ${error.message}`);
+      this.logger.error(
+        `Failed to emit dispatch event for request ${request.id}: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
+  /**
+   * Removes stale drivers from Redis geospatial index.
+   */
   private async removeStaleDrivers(driverIds: string[]) {
-    await this.redis.zrem(RedisConstants.KEYS.DRIVERS_GEO_INDEX, ...driverIds);
+    try {
+      await this.redis.zrem(
+        RedisConstants.KEYS.DRIVERS_GEO_INDEX,
+        ...driverIds,
+      );
+      this.logger.log(`Removed ${driverIds.length} stale drivers from Redis`);
+    } catch (error) {
+      this.logger.error(
+        `Failed to remove stale drivers: ${error.message}`,
+        error.stack,
+      );
+    }
   }
 }

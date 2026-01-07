@@ -42,8 +42,37 @@ export class TrackingService {
   }
 
   /**
-   * atomic execution of Geo-Index update and Metadata refresh.
-   * Uses a Redis Pipeline to reduce network round-trips.
+   * Persists the driver's latest location state in Redis.
+   *
+   * This method updates both:
+   * - the geospatial index (for proximity queries)
+   * - the driver's metadata hash (for liveness & last-seen tracking)
+   *
+   * The operations are executed using a Redis pipeline to batch commands
+   * and reduce network round-trips. While executed sequentially by Redis,
+   * the pipeline does NOT provide atomic guarantees.
+   *
+   * Data written:
+   * - GEO index:
+   *   - Key: DRIVERS_GEO_INDEX
+   *   - Member: driverId
+   *   - Coordinates: (lng, lat)
+   *
+   * - Metadata hash:
+   *   - Key: driver:{driverId}:meta
+   *   - Fields:
+   *     - lastSeen: Unix timestamp (ms)
+   *     - lat: latitude
+   *     - lng: longitude
+   *   - TTL: refreshed on each update to detect stale drivers
+   *
+   * @param driverId - Unique identifier of the driver
+   * @param lat - Current latitude
+   * @param lng - Current longitude
+   * @param timestamp - Last-seen timestamp (epoch milliseconds)
+   * @param ttl - Time-to-live (seconds) for driver metadata
+   *
+   * @throws RedisError if any Redis command fails
    */
   private async persistLocationState(
     driverId: string,
