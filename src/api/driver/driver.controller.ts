@@ -32,8 +32,7 @@ export class DriverController {
   constructor(private readonly driverService: DriverService) {}
 
   @Post()
-  @ApiPublic()
-  @ApiAuth({
+  @ApiPublic({
     type: DriverResDto,
     summary: 'Create driver',
     statusCode: HttpStatus.CREATED,

@@ -32,8 +32,7 @@ export class ClientController {
   constructor(private readonly ClientService: ClientService) {}
 
   @Post()
-  @ApiPublic()
-  @ApiAuth({
+  @ApiPublic({
     type: ClientResDto,
     summary: 'Create Client',
     statusCode: HttpStatus.CREATED,
