@@ -10,6 +10,10 @@ import { RequestModule } from '@/api/request/request.module';
 import { TrackingModule } from '@/api/tracking/tracking.module';
 import { ClientModule } from './client/client.module';
 import { DispatchModule } from './dispatch/dispatch.module';
+import { ProductModule } from './product/product.module';
+import { NotificationModule } from '@/api/notification/notification.module';
+import { RatingModule } from '@/api/rating/rating.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -22,6 +26,10 @@ import { DispatchModule } from './dispatch/dispatch.module';
     TrackingModule,
     RequestModule,
     DispatchModule,
+    ProductModule,
+    NotificationModule,
+    RatingModule,
+    OrderModule,
   ],
 })
 export class ApiModule {}

@@ -39,7 +39,9 @@
       "@/mail/*": ["src/mail/*"],
       "@/redis/*": ["src/libs/redis/*"],
       "@/shared/*": ["src/shared/*"],
-      "@/utils/*": ["src/utils/*"]
+      "@/utils/*": ["src/utils/*"],
+      "@/logger/*": ["src/logger/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "dist", "frontend"]
 }

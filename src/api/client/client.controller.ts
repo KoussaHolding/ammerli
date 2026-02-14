@@ -20,7 +20,6 @@ import { ClientService } from './client.service';
 import { ClientResDto } from './dto/client.res.dto';
 import { ListClientReqDto } from './dto/list-client.req.dto';
 import { LoadMoreClientsReqDto } from './dto/load-more-clients.req.dto';
-import { RegisterClientReqDto } from './dto/register-client.req.dto';
 import { UpdateClientReqDto } from './dto/update-client.req.dto';
 
 @ApiTags('Clients')
@@ -31,17 +30,7 @@ import { UpdateClientReqDto } from './dto/update-client.req.dto';
 export class ClientController {
   constructor(private readonly ClientService: ClientService) {}
 
-  @Post()
-  @ApiPublic({
-    type: ClientResDto,
-    summary: 'Create Client',
-    statusCode: HttpStatus.CREATED,
-  })
-  async createClient(
-    @Body() registerClientDto: RegisterClientReqDto,
-  ): Promise<ClientResDto> {
-    return await this.ClientService.register(registerClientDto);
-  }
+
 
   @Get()
   @ApiPublic()

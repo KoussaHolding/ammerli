@@ -20,7 +20,6 @@ import { DriverService } from './driver.service';
 import { DriverResDto } from './dto/driver.res.dto';
 import { ListDriverReqDto } from './dto/list-driver.req.dto';
 import { LoadMoreDriversReqDto } from './dto/load-more-drivers.req.dto';
-import { RegisterDriverReqDto } from './dto/register-driver.req.dto';
 import { UpdateDriverReqDto } from './dto/update-driver.req.dto';
 
 @ApiTags('drivers')
@@ -31,17 +30,7 @@ import { UpdateDriverReqDto } from './dto/update-driver.req.dto';
 export class DriverController {
   constructor(private readonly driverService: DriverService) {}
 
-  @Post()
-  @ApiPublic({
-    type: DriverResDto,
-    summary: 'Create driver',
-    statusCode: HttpStatus.CREATED,
-  })
-  async createDriver(
-    @Body() registerDriverDto: RegisterDriverReqDto,
-  ): Promise<DriverResDto> {
-    return await this.driverService.register(registerDriverDto);
-  }
+
 
   @Get()
   @ApiPublic()

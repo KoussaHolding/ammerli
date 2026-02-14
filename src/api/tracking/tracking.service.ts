@@ -1,95 +1,129 @@
 import { RedisConstants } from '@/constants/redis.constants';
-import { Instrument } from '@/decorators/instrument.decorator';
-import { UseDistributedLock } from '@/libs/redis/decorators/lock.decorator';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import Redis from 'ioredis';
-import Redlock from 'redlock';
+import { RedisScriptService } from '@/libs/redis/redis-script.service';
+import { RedisScriptName } from '@/libs/redis/redis-scripts.registry';
+import { Injectable } from '@nestjs/common';
+import { AppLogger } from 'src/logger/logger.service';
+import { DriverMetadataCacheRepository } from './driver-metadata-cache.repository';
+
+const SCRIPT_UPDATE_LOCATION: RedisScriptName = 'UPDATE_DRIVER_LOCATION';
+
+/**
+ * Service responsible for tracking driver locations.
+ *
+ * Responsibilities:
+ * 1. Persist driver latitude/longitude in Redis geospatial index.
+ * 2. Update driver metadata (lastSeen, lat, lng) with TTL.
+ * 3. Ignore stale updates (based on timestamp).
+ *
+ * Notes:
+ * - Atomic updates are handled via a Redis Lua script.
+ * - This service is lock-free; no distributed locks are required.
+ * - TTL in Redis ensures that inactive drivers automatically expire.
+ */
+import { DriverMetadataService } from '../driver/driver-metadata.service';
 
 @Injectable()
 export class TrackingService {
-  private readonly logger = new Logger(TrackingService.name);
-  private readonly redisClient: any;
-
   constructor(
-    @Inject('REDIS_CLIENT') private readonly redis: Redis,
-    @Inject('REDLOCK_CLIENT') private readonly redlock: Redlock,
-  ) {}
-
-  /**
-   * Persists the driver's current location and refreshes their "Online" status.
-   * This method is debounced using a distributed lock to prevent write-storms.
-   *
-   * @param driverId - Unique identifier of the driver.
-   * @param lat - Latitude.
-   * @param lng - Longitude.
-   */
-  @UseDistributedLock({
-    key: RedisConstants.KEYS.LOCK_DRIVER_UPDATE_PATTERN,
-    ttl: RedisConstants.TTL.LOCK_DRIVER_UPDATE_MS,
-    failStrategy: 'SKIP',
-  })
-  @Instrument({ logArgs: false })
-  async updateDriverLocation(driverId: string, lat: number, lng: number) {
-    const timestamp = Date.now();
-
-    await this.persistLocationState(
-      driverId,
-      lat,
-      lng,
-      timestamp,
-      RedisConstants.TTL.DRIVER_METADATA_SEC,
-    );
+    private readonly redisScriptService: RedisScriptService,
+    private readonly driverMetadataCacheRepo: DriverMetadataCacheRepository,
+    private readonly driverMetadataService: DriverMetadataService,
+    private readonly logger: AppLogger,
+  ) {
+    this.logger.setContext(TrackingService.name);
   }
 
   /**
-   * Persists the driver's latest location state in Redis.
+   * Builds the Redis keys array for the location-update Lua script.
    *
-   * This method updates both:
-   * - the geospatial index (for proximity queries)
-   * - the driver's metadata hash (for liveness & last-seen tracking)
-   *
-   * The operations are executed using a Redis pipeline to batch commands
-   * and reduce network round-trips. While executed sequentially by Redis,
-   * the pipeline does NOT provide atomic guarantees.
-   *
-   * Data written:
-   * - GEO index:
-   *   - Key: DRIVERS_GEO_INDEX
-   *   - Member: driverId
-   *   - Coordinates: (lng, lat)
-   *
-   * - Metadata hash:
-   *   - Key: driver:{driverId}:meta
-   *   - Fields:
-   *     - lastSeen: Unix timestamp (ms)
-   *     - lat: latitude
-   *     - lng: longitude
-   *   - TTL: refreshed on each update to detect stale drivers
-   *
-   * @param driverId - Unique identifier of the driver
-   * @param lat - Current latitude
-   * @param lng - Current longitude
-   * @param timestamp - Last-seen timestamp (epoch milliseconds)
-   * @param ttl - Time-to-live (seconds) for driver metadata
-   *
-   * @throws RedisError if any Redis command fails
+   * @param driverId - Unique identifier of the driver.
+   * @returns Array of key strings (GEO index and driver metadata key).
    */
-  private async persistLocationState(
+  private locationUpdateKeys(driverId: string): string[] {
+    return [
+      RedisConstants.KEYS.DRIVERS_GEO_INDEX,
+      RedisConstants.KEYS.driverMetadata(driverId),
+    ];
+  }
+
+  /**
+   * Builds the arguments array for the location-update Lua script.
+   *
+   * @param lng - Longitude.
+   * @param lat - Latitude.
+   * @param driverId - Unique identifier of the driver.
+   * @returns Array of script arguments (lng, lat, driverId, timestamp, TTL).
+   */
+  private locationUpdateArgs(
+    lng: number,
+    lat: number,
+    driverId: string,
+  ): (string | number)[] {
+    return [
+      lng,
+      lat,
+      driverId,
+      Date.now(),
+      RedisConstants.TTL.DRIVER_METADATA_SEC,
+    ];
+  }
+
+  /**
+   * Updates a driver's location in Redis.
+   *
+   * Steps:
+   * 1. Calls a Lua script to atomically:
+   *    - Update GEO index
+   *    - Update driver metadata hash
+   *    - Refresh TTL
+   * 2. Ignores updates that are older than the lastSeen timestamp.
+   *
+   * @param driverId - Unique identifier of the driver.
+   * @param lat - Current latitude of the driver.
+   * @param lng - Current longitude of the driver.
+   * @returns A boolean indicating whether the update was accepted:
+   *          - `true`: update persisted
+   *          - `false`: stale update ignored or failed
+   */
+  async updateDriverLocation(
     driverId: string,
     lat: number,
     lng: number,
-    timestamp: number,
-    ttl: number,
-  ) {
-    const metadataKey = RedisConstants.KEYS.driverMetadata(driverId);
-    const geoKey = RedisConstants.KEYS.DRIVERS_GEO_INDEX;
+  ): Promise<boolean> {
+    const keys = this.locationUpdateKeys(driverId);
+    const args = this.locationUpdateArgs(lng, lat, driverId);
 
-    const pipeline = this.redis.pipeline();
+    try {
+      const result = await this.redisScriptService.eval(
+        SCRIPT_UPDATE_LOCATION,
+        keys,
+        args,
+      );
+      
+      return result === 1;
+    } catch (error) {
+      if (this.logger) {
+        this.logger.error(`Failed to update location for ${driverId}`, error.stack);
+      }
+      throw error; 
+    }
+  }
 
-    pipeline.geoadd(geoKey, lng, lat, driverId);
-    pipeline.hset(metadataKey, { lastSeen: timestamp, lat, lng });
-    pipeline.expire(metadataKey, ttl);
-
-    await pipeline.exec();
+  /**
+   * Checks if a driver is considered online based on Redis TTL.
+   *
+   * @param driverId - Unique identifier of the driver.
+   * @returns `true` if driver metadata exists in Redis; `false` otherwise.
+   */
+  async isDriverOnline(driverId: string): Promise<boolean> {
+    try {
+      return await this.driverMetadataCacheRepo.isDriverOnline(driverId);
+    } catch (error) {
+      this.logger.error(
+        `Failed to check online status for driver ${driverId}`,
+        error.stack,
+      );
+      return false;
+    }
   }
 }

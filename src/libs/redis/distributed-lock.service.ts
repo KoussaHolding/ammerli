@@ -1,4 +1,5 @@
 import { ErrorCode } from '@/constants/error-code.constant';
+import { LogConstants } from '@/constants/log.constant';
 import { AppException } from '@/exceptions/app.exception';
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import Redlock, { Lock } from 'redlock';
@@ -26,13 +27,17 @@ export class DistributedLockService {
   ): Promise<T> {
     try {
       return await this.redlock.using([resource], ttl, async () => {
-        this.logger.debug(`Acquired lock: ${resource}`);
+        this.logger.debug(
+          `${LogConstants.SYSTEM.DEBUG_ACQUIRED_LOCK}: ${resource}`,
+        );
         return await routine();
       });
     } catch (error: any) {
       // Differentiate between "Lock Busy" and "Code Error"
       if (this.isLockError(error)) {
-        this.logger.warn(`Failed to acquire lock for: ${resource}`);
+        this.logger.warn(
+          `${LogConstants.SYSTEM.WARN_FAILED_LOCK}: ${resource}`,
+        );
         throw new AppException(ErrorCode.S001, HttpStatus.TOO_MANY_REQUESTS);
       }
 
@@ -52,10 +57,14 @@ export class DistributedLockService {
   async acquireLock(resource: string, ttl: number): Promise<Lock> {
     try {
       const lock = await this.redlock.acquire([resource], ttl);
-      this.logger.debug(`Manually acquired lock: ${resource}`);
+      this.logger.debug(
+        `${LogConstants.SYSTEM.DEBUG_MANUAL_ACQUIRED_LOCK}: ${resource}`,
+      );
       return lock;
     } catch (error) {
-      this.logger.warn(`Failed to manually acquire lock: ${resource}`);
+      this.logger.warn(
+        `${LogConstants.SYSTEM.WARN_MANUAL_FAILED_LOCK}: ${resource}`,
+      );
       throw new AppException(ErrorCode.S001, HttpStatus.TOO_MANY_REQUESTS);
     }
   }
@@ -67,12 +76,14 @@ export class DistributedLockService {
   async releaseLock(lock: Lock): Promise<void> {
     try {
       await lock.release();
-      this.logger.debug(`Manually released lock: ${lock.resources.join(', ')}`);
+      this.logger.debug(
+        `${LogConstants.SYSTEM.DEBUG_MANUAL_RELEASED_LOCK}: ${lock.resources.join(', ')}`,
+      );
     } catch (error: any) {
       // It is common for release to fail if the lock already expired (TTL).
       // We log this as debug/warn, not error, because the system state is safe (lock is gone).
       this.logger.warn(
-        `Lock release skipped (likely expired): ${error.message}`,
+        `${LogConstants.SYSTEM.WARN_LOCK_RELEASE_SKIPPED}: ${error.message}`,
       );
     }
   }

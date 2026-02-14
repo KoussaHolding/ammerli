@@ -13,6 +13,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { SessionEntity } from './session.entity';
+import { UserRoleEnum } from '../enums/user-role.enum';
 
 @Entity('users')
 export class UserEntity extends AbstractEntity {
@@ -43,6 +44,13 @@ export class UserEntity extends AbstractEntity {
   @Column({ nullable: true })
   @Index('UQ_user_email', { where: '"deleted_at" IS NULL', unique: true })
   email?: string;
+
+  @Column({
+    type: 'enum',
+    enum: UserRoleEnum,
+    default: UserRoleEnum.CLIENT,
+  })
+  role: UserRoleEnum;
 
   @Column()
   @Exclude()

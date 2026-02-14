@@ -1,3 +1,4 @@
+import { LogConstants } from '@/constants/log.constant';
 import { Logger } from '@nestjs/common';
 
 interface InstrumentOptions {
@@ -20,7 +21,9 @@ export function Instrument(options: InstrumentOptions = {}) {
       const start = Date.now();
 
       if (options.logArgs) {
-        logger.debug(`Calling ${propertyKey} with: ${JSON.stringify(args)}`);
+        logger.debug(
+          `${LogConstants.SYSTEM.DEBUG_INSTRUMENT_CALL} ${propertyKey}: ${JSON.stringify(args)}`,
+        );
       }
 
       try {
@@ -30,16 +33,20 @@ export function Instrument(options: InstrumentOptions = {}) {
         const threshold = options.performanceThreshold || 200; // Default 200ms
 
         if (duration > threshold) {
-          logger.warn(`PERF WARNING: ${propertyKey} took ${duration}ms`);
+          logger.warn(
+            `${LogConstants.SYSTEM.WARN_INSTRUMENT_PERF}: ${propertyKey} took ${duration}ms`,
+          );
         } else {
-          logger.debug(`${propertyKey} completed in ${duration}ms`);
+          logger.debug(
+            `${LogConstants.SYSTEM.DEBUG_INSTRUMENT_COMPLETED}: ${propertyKey} in ${duration}ms`,
+          );
         }
 
         return result;
       } catch (error) {
         const duration = Date.now() - start;
         logger.error(
-          `FAILED: ${propertyKey} after ${duration}ms. Error: ${error.message}`,
+          `${LogConstants.SYSTEM.ERROR_INSTRUMENT_FAILED}: ${propertyKey} after ${duration}ms. Error: ${error.message}`,
           error.stack,
         );
         throw error;

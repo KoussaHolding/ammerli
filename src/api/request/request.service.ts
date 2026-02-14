@@ -9,11 +9,20 @@ import { RequestResDto } from './dto/request.res.dto';
 import { RequestStatusEnum } from './enums/request-status.enum';
 import { RequestCacheRepository } from './request-cache.repository';
 
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { RequestEntity } from './entities/request.entity';
+import { OrderService } from '../order/order.service';
+import { OrderStatusEnum } from '../order/entities/order.entity';
+
 @Injectable()
 export class RequestService {
   constructor(
     private readonly amqpConnection: AmqpConnection,
     private readonly cacheRepo: RequestCacheRepository,
+    @InjectRepository(RequestEntity)
+    private readonly requestRepo: Repository<RequestEntity>,
+    private readonly orderService: OrderService,
   ) {}
 
   /**
@@ -41,6 +50,7 @@ export class RequestService {
       id: requestId,
       status: RequestStatusEnum.SEARCHING,
       user,
+      driverId: null,
       ...dto,
     };
 
@@ -112,5 +122,44 @@ export class RequestService {
    */
   async deleteRequestFromCache(requestId: string): Promise<void> {
     await this.cacheRepo.delete(requestId);
+  }
+
+  async finalizeRequest(requestId: string, status: RequestStatusEnum) {
+    const request = await this.getRequestFromCache(requestId);
+    if (!request) {
+        throw new Error('Request not found in cache');
+    }
+
+    // 1. Update status in Redis (for immediate consistency if queried)
+    request.status = status;
+    await this.setRequestInCache(request, 60); // Short TTL as we are archiving
+
+    // 2. Persist to Postgres
+    const requestEntity = this.requestRepo.create({
+        id: request.id as Uuid,
+        status: status,
+        userId: request.user?.id as Uuid,
+        driverId: request.driverId ? request.driverId as Uuid : null,
+        volume: request.quantity, 
+    });
+
+    await this.requestRepo.save(requestEntity);
+
+    // 3. Update Order Status
+    let orderStatus: OrderStatusEnum;
+    if (status === RequestStatusEnum.COMPLETED) {
+        orderStatus = OrderStatusEnum.DELIVERED;
+    } else if (status === RequestStatusEnum.CANCELLED || status === RequestStatusEnum.EXPIRED) {
+        orderStatus = OrderStatusEnum.CANCELLED;
+    }
+
+    if (orderStatus) {
+        await this.orderService.updateStatus(requestId as Uuid, orderStatus);
+    }
+    
+    // 4. Emit Event
+    await this.amqpConnection.publish('requests', `request.${status.toLowerCase()}`, request);
+
+    return request;
   }
 }

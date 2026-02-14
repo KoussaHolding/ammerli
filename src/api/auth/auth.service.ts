@@ -1,6 +1,7 @@
 import { IEmailJob } from '@/common/interfaces/job.interface';
 import { Branded } from '@/common/types/types';
 import { AllConfigType } from '@/config/config.type';
+import { Uuid } from '@/common/types/common.type';
 import { SYSTEM_USER_ID } from '@/constants/app.constant';
 import { CacheKey } from '@/constants/cache.constant';
 import { ErrorCode } from '@/constants/error-code.constant';
@@ -20,6 +21,9 @@ import { Cache } from 'cache-manager';
 import { plainToInstance } from 'class-transformer';
 import crypto from 'crypto';
 import { EntityManager, Repository } from 'typeorm';
+import { ClientService } from '../client/client.service';
+import { DriverService } from '../driver/driver.service';
+import { UserRoleEnum } from '../user/enums/user-role.enum';
 import { SessionEntity } from '../user/entities/session.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import { LoginReqDto } from './dto/login.req.dto';
@@ -51,6 +55,8 @@ export class AuthService {
     private readonly emailQueue: Queue<IEmailJob, any, string>,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
+    private readonly clientService: ClientService,
+    private readonly driverService: DriverService,
   ) {}
 
   /**
@@ -105,6 +111,14 @@ export class AuthService {
       ? manager.getRepository(UserEntity)
       : UserEntity.getRepository();
 
+    // Validate driverType for CLIENT role
+    if (dto.role === UserRoleEnum.CLIENT && dto.driverType) {
+      throw new ValidationException(
+        ErrorCode.V000,
+        'Driver type should not be provided for Client role',
+      );
+    }
+
     // Check if the user already exists
     const isExistUser = await userRepo.exists({
       where: { phone: dto.phone },
@@ -120,11 +134,19 @@ export class AuthService {
       firstName: dto.firstName,
       lastName: dto.lastName,
       password: dto.password,
+      role: dto.role,
       createdBy: SYSTEM_USER_ID,
       updatedBy: SYSTEM_USER_ID,
     });
 
     await user.save();
+
+    if (dto.role === UserRoleEnum.CLIENT) {
+      await this.clientService.createProfile(user);
+    } else if (dto.role === UserRoleEnum.DRIVER) {
+      // Driver type is already validated by DTO
+      await this.driverService.createProfile(user, dto.driverType!);
+    }
 
     return plainToInstance(RegisterResDto, {
       userId: user.id,
@@ -229,7 +251,7 @@ export class AuthService {
       await this.jwtService.signAsync(
         {
           id: data.id,
-          role: '',
+          role: (await this.userRepository.findOne({ where: { id: data.id as Uuid } }))?.role || '',
           sessionId: data.sessionId,
         },
         {

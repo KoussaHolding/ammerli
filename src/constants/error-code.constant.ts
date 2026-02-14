@@ -20,4 +20,6 @@ export enum ErrorCode {
   // === SYSTEM / INFRASTRUCTURE ===
   S001 = 'system.error.lock_busy', // Redlock failed to acquire
   S002 = 'system.error.redis_failure', // Redis is down or timed out
+  S003 = 'system.error.redlock_client_not_found',
+  S004 = 'system.error.redis_script_not_loaded',
 }

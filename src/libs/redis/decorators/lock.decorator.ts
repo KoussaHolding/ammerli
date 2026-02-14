@@ -1,3 +1,6 @@
+import { ErrorCode } from '@/constants/error-code.constant';
+import { LogConstants } from '@/constants/log.constant';
+import { AppException } from '@/exceptions/app.exception';
 import Redlock from 'redlock';
 
 export interface RedlockOptions {
@@ -20,9 +23,7 @@ export function UseDistributedLock(options: RedlockOptions) {
       const redlock: Redlock = (this as any).redlock;
 
       if (!redlock) {
-        throw new Error(
-          `Redlock client not found in ${target.constructor.name}. Inject it as 'redlock'.`,
-        );
+        throw new AppException(ErrorCode.S003, 500);
       }
 
       // Parse dynamic keys (e.g., "driver:{0}")
@@ -45,7 +46,9 @@ export function UseDistributedLock(options: RedlockOptions) {
           // Log a warning but don't crash the request
           const logger = (this as any).logger; // Assumes your service has a logger
           if (logger)
-            logger.warn(`Skipped execution for ${lockKey} - Lock busy`);
+            logger.warn(
+              `${LogConstants.SYSTEM.WARN_LOCK_BUSY}: ${lockKey}`,
+            );
           return;
         }
         throw err;

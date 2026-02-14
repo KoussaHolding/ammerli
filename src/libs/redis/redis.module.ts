@@ -3,6 +3,8 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redlock from 'redlock';
 import { DistributedLockService } from './distributed-lock.service';
+import { RedisLibsService } from './redis-libs.service';
+import { RedisScriptService } from './redis-script.service';
 
 @Global()
 @Module({
@@ -14,16 +16,16 @@ import { DistributedLockService } from './distributed-lock.service';
         config: {
           host: configService.get('redis.host'),
           port: configService.get('redis.port'),
-          username: configService.get('redis.username'),
-          tls: {},
+          password: configService.get('redis.password'),
           retryStrategy: (times) => Math.min(times * 50, 2000),
         },
       }),
     }),
   ],
   providers: [
+    RedisLibsService,
+    RedisScriptService,
     DistributedLockService,
-    // 1. THE REDLOCK FACTORY (The Glue)
     {
       provide: 'REDLOCK_CLIENT',
       inject: [RedisService],
@@ -42,7 +44,7 @@ import { DistributedLockService } from './distributed-lock.service';
     },
     // 2. RAW CLIENT ALIAS (Compatibility Layer)
     // Allows you to use @Inject('REDIS_CLIENT') in your TrackingService
-    // instead of refactoring it to use RedisService.
+    // instead of refactoring it to use RedisLibsService.
     {
       provide: 'REDIS_CLIENT',
       inject: [RedisService],
@@ -53,6 +55,8 @@ import { DistributedLockService } from './distributed-lock.service';
   ],
   exports: [
     RedisModule,
+    RedisLibsService,
+    RedisScriptService,
     DistributedLockService,
     'REDLOCK_CLIENT',
     'REDIS_CLIENT', // Export the alias

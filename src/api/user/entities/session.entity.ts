@@ -7,7 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { UserEntity } from './user.entity';
+import type { UserEntity } from './user.entity';
 
 @Entity('session')
 export class SessionEntity extends AbstractEntity {
@@ -39,6 +39,6 @@ export class SessionEntity extends AbstractEntity {
     referencedColumnName: 'id',
     foreignKeyConstraintName: 'FK_session_user',
   })
-  @ManyToOne(() => UserEntity, (user) => user.sessions)
+  @ManyToOne('UserEntity', (user: UserEntity) => user.sessions)
   user!: UserEntity;
 }

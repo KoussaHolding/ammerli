@@ -1,7 +1,7 @@
 import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth, ApiPublic } from '@/decorators/http.decorators';
 import { Body, Controller, Get, Post } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginReqDto } from './dto/login.req.dto';
 import { LoginResDto } from './dto/login.res.dto';
@@ -29,7 +29,33 @@ export class AuthController {
   }
 
   @ApiPublic()
-  @Post('email/register')
+  @Post('phone/register')
+  @ApiBody({
+    type: RegisterReqDto,
+    examples: {
+      client: {
+        summary: 'Client Registration',
+        value: {
+          phone: '+213000000000',
+          firstName: 'John',
+          lastName: 'Doe',
+          password: 'password123',
+          role: 'CLIENT',
+        },
+      },
+      driver: {
+        summary: 'Driver Registration',
+        value: {
+          phone: '+213000000000',
+          firstName: 'Jane',
+          lastName: 'Doe',
+          password: 'password123',
+          role: 'DRIVER',
+          driverType: 'WHOLESALE',
+        },
+      },
+    },
+  })
   async register(@Body() dto: RegisterReqDto): Promise<RegisterResDto> {
     return await this.authService.register(dto);
   }

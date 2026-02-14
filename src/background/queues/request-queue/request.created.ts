@@ -5,7 +5,7 @@ import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class RequestConsumer {
+export class RequestCreatedConsumer {
   constructor(private readonly dispatchService: DispatchService) {}
 
   @RabbitSubscribe({
@@ -13,7 +13,7 @@ export class RequestConsumer {
     routingKey: 'request.created',
     queue: 'process-request-queue',
   })
-  async handleRequestCreated(message: RequestResDto) {
+  async handleDispatch(message: RequestResDto) {
     await this.dispatchService.dispatchRequest({
       id: message.id,
       quantity: message.quantity,
@@ -22,6 +22,7 @@ export class RequestConsumer {
       user: message.user,
       pickupLat: message.pickupLat,
       pickupLng: message.pickupLng,
+      driverId: message.driverId ?? null,
     });
   }
 }

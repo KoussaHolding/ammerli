@@ -10,36 +10,27 @@ import { SYSTEM_USER_ID } from '@/constants/app.constant';
 import { buildPaginator } from '@/utils/cursor-pagination';
 import { paginate } from '@/utils/offset-pagination';
 import { plainToInstance } from 'class-transformer';
-import { AuthService } from '../auth/auth.service';
 import { ClientResDto } from './dto/client.res.dto';
 import { ListClientReqDto } from './dto/list-client.req.dto';
 import { LoadMoreClientsReqDto } from './dto/load-more-clients.req.dto';
-import { RegisterClientReqDto } from './dto/register-client.req.dto';
 import { UpdateClientReqDto } from './dto/update-client.req.dto';
 import { ClientEntity } from './entities/client.entity';
+import { UserEntity } from '../user/entities/user.entity';
 
 @Injectable()
 export class ClientService {
   constructor(
     @InjectRepository(ClientEntity)
     private readonly ClientRepository: Repository<ClientEntity>,
-    private readonly authService: AuthService,
   ) {}
 
-  async register(
-    registerClientDto: RegisterClientReqDto,
-  ): Promise<ClientResDto> {
-    const { user } = await this.authService.register(registerClientDto);
 
-    const Client = this.ClientRepository.create({
+
+  async createProfile(user: UserEntity): Promise<ClientEntity> {
+    const client = this.ClientRepository.create({
       user,
     });
-    await this.ClientRepository.save(Client);
-
-    return {
-      id: Client.id,
-      user,
-    };
+    return await this.ClientRepository.save(client);
   }
 
   async findAll(

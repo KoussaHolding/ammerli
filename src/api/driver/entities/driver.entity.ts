@@ -31,4 +31,10 @@ export class DriverEntity extends AbstractEntity {
     default: DriverTypeEnum.RETAIL,
   })
   type: DriverTypeEnum;
+
+  @Column({ type: 'float', default: 5.0 })
+  rating: number;
+
+  @Column({ type: 'int', default: 0 })
+  totalJobs: number;
 }

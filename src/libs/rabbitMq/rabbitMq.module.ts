@@ -7,7 +7,11 @@ import { Global, Module } from '@nestjs/common';
     RabbitMQModule.forRoot({
       exchanges: [
         {
-          name: process.env.RABBITMQ_EXCHANGE || 'requests',
+          name: 'requests',
+          type: 'topic',
+        },
+        {
+          name: 'alerts',
           type: 'topic',
         },
       ],

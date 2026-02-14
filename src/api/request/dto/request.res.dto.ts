@@ -3,6 +3,7 @@ import { Uuid } from '@/common/types/common.type';
 import {
   ClassField,
   EnumField,
+  NumberField,
   StringField,
   UUIDField,
 } from '@/decorators/field.decorators';
@@ -16,15 +17,15 @@ export class RequestResDto {
   @Expose()
   id: Uuid;
 
-  @StringField()
+  @NumberField()
   @Expose()
   pickupLat: number;
 
-  @StringField()
+  @NumberField()
   @Expose()
   pickupLng: number;
 
-  @StringField()
+  @NumberField()
   @Expose()
   quantity: number;
 
@@ -35,9 +36,14 @@ export class RequestResDto {
   @EnumField(() => RequestTypeEnum, {
     description: 'Type of the request',
   })
+  @Expose()
   type: RequestTypeEnum;
 
   @ClassField(() => UserResDto)
   @Expose()
   user: UserResDto;
+
+  @UUIDField({ nullable: true })
+  @Expose()
+  driverId: Uuid | null;
 }

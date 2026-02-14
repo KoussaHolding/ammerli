@@ -10,37 +10,29 @@ import { SYSTEM_USER_ID } from '@/constants/app.constant';
 import { buildPaginator } from '@/utils/cursor-pagination';
 import { paginate } from '@/utils/offset-pagination';
 import { plainToInstance } from 'class-transformer';
-import { AuthService } from '../auth/auth.service';
 import { DriverResDto } from './dto/driver.res.dto';
 import { ListDriverReqDto } from './dto/list-driver.req.dto';
 import { LoadMoreDriversReqDto } from './dto/load-more-drivers.req.dto';
-import { RegisterDriverReqDto } from './dto/register-driver.req.dto';
 import { UpdateDriverReqDto } from './dto/update-driver.req.dto';
 import { DriverEntity } from './entities/driver.entity';
+import { UserEntity } from '../user/entities/user.entity';
+import { DriverTypeEnum } from './enums/driver-type.enum';
 
 @Injectable()
 export class DriverService {
   constructor(
     @InjectRepository(DriverEntity)
     private readonly driverRepository: Repository<DriverEntity>,
-    private readonly authService: AuthService,
   ) {}
 
-  async register(
-    registerDriverDto: RegisterDriverReqDto,
-  ): Promise<DriverResDto> {
-    const { user } = await this.authService.register(registerDriverDto);
 
+
+  async createProfile(user: UserEntity, type: DriverTypeEnum): Promise<DriverEntity> {
     const driver = this.driverRepository.create({
       user,
+      type,
     });
-    await this.driverRepository.save(driver);
-
-    return {
-      id: driver.id,
-      user,
-      ...registerDriverDto,
-    };
+    return await this.driverRepository.save(driver);
   }
 
   async findAll(

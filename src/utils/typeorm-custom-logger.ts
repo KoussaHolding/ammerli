@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { LogConstants } from '@/constants/log.constant';
 import { Logger } from '@nestjs/common';
 import {
   QueryRunner,
@@ -32,7 +33,7 @@ class TypeOrmCustomLogger implements TypeOrmLogger {
       (parameters && parameters.length
         ? ' -- PARAMETERS: ' + this.stringifyParams(parameters)
         : '');
-    this.logger.log(`query: ${sql}`);
+    this.logger.log(`${LogConstants.SYSTEM.DB_QUERY}: ${sql}`);
   }
 
   /**
@@ -53,8 +54,8 @@ class TypeOrmCustomLogger implements TypeOrmLogger {
       (parameters && parameters.length
         ? ' -- PARAMETERS: ' + this.stringifyParams(parameters)
         : '');
-    this.logger.error(`query failed: ${sql}`);
-    this.logger.error(`error:`, error);
+    this.logger.error(`${LogConstants.SYSTEM.DB_QUERY_FAILED}: ${sql}`);
+    this.logger.error(`${LogConstants.SYSTEM.DB_QUERY_ERROR}:`, error);
   }
 
   /**
@@ -75,8 +76,8 @@ class TypeOrmCustomLogger implements TypeOrmLogger {
       (parameters && parameters.length
         ? ' -- PARAMETERS: ' + this.stringifyParams(parameters)
         : '');
-    this.logger.warn(`query is slow: ${sql}`);
-    this.logger.warn(`execution time: ${time}`);
+    this.logger.warn(`${LogConstants.SYSTEM.DB_QUERY_SLOW}: ${sql}`);
+    this.logger.warn(`${LogConstants.SYSTEM.DB_QUERY_TIME}: ${time}`);
   }
 
   /**

@@ -1,0 +1,153 @@
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { Test, TestingModule } from '@nestjs/testing';
+import { RequestService } from './request.service';
+import { RequestCacheRepository } from './request-cache.repository';
+import { CreateRequestDto } from './dto/create-request.dto';
+import { UserResDto } from '../user/dto/user.res.dto';
+import { Uuid } from '@/common/types/common.type';
+import { RequestStatusEnum } from './enums/request-status.enum';
+
+jest.mock('uuid', () => ({
+    v4: jest.fn(() => 'test-uuid'),
+}));
+
+describe('RequestService', () => {
+    let service: RequestService;
+    let amqpConnection: jest.Mocked<AmqpConnection>;
+    let cacheRepo: jest.Mocked<RequestCacheRepository>;
+
+    beforeEach(async () => {
+        const amqpConnectionMock = {
+            publish: jest.fn(),
+        };
+        const cacheRepoMock = {
+            get: jest.fn(),
+            set: jest.fn(),
+            delete: jest.fn(),
+        };
+
+        const module: TestingModule = await Test.createTestingModule({
+            providers: [
+                RequestService,
+                { provide: AmqpConnection, useValue: amqpConnectionMock },
+                { provide: RequestCacheRepository, useValue: cacheRepoMock },
+            ],
+        }).compile();
+
+        service = module.get<RequestService>(RequestService);
+        amqpConnection = module.get(AmqpConnection);
+        cacheRepo = module.get(RequestCacheRepository);
+    });
+
+    it('should be defined', () => {
+        expect(service).toBeDefined();
+    });
+
+    describe('createRequest', () => {
+        const createRequestDto: CreateRequestDto = {
+            pickupLocation: { lat: 10, lng: 20 },
+            destinationLocation: { lat: 30, lng: 40 },
+        } as any; // Cast as any for brevity if needed
+        const user: UserResDto = { id: 'user-1' as Uuid } as any;
+
+        // Mock uuid generation? Not directly possible without mock factory or manual mock of uuid module.
+        // Or we can just check structure of result.
+        
+        it('should return existing request if found in cache', async () => {
+            const existingRequest = { id: 'existing-id' as Uuid } as any;
+            cacheRepo.get.mockResolvedValue(existingRequest);
+
+            const result = await service.createRequest(createRequestDto, user);
+            
+            expect(result).toBe(existingRequest);
+            expect(cacheRepo.set).not.toHaveBeenCalled();
+            expect(amqpConnection.publish).not.toHaveBeenCalled();
+        });
+
+        it('should create new request, save to cache, and publish event', async () => {
+            cacheRepo.get.mockResolvedValue(null);
+
+            const result = await service.createRequest(createRequestDto, user);
+
+            expect(result).toHaveProperty('id');
+            expect(result.status).toBe(RequestStatusEnum.SEARCHING);
+            expect(result.user).toBe(user);
+            
+            expect(cacheRepo.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    id: expect.any(String),
+                    status: RequestStatusEnum.SEARCHING,
+                }),
+                300
+            );
+            expect(amqpConnection.publish).toHaveBeenCalledWith(
+                'requests',
+                'request.created',
+                expect.objectContaining({
+                    id: expect.any(String),
+                    status: RequestStatusEnum.SEARCHING,
+                })
+            );
+        });
+    });
+
+    describe('getRequestFromCache', () => {
+        it('should return request from repository', async () => {
+            const request = { id: 'req-1' } as any;
+            cacheRepo.get.mockResolvedValue(request);
+
+            const result = await service.getRequestFromCache('req-1');
+            expect(result).toBe(request);
+            expect(cacheRepo.get).toHaveBeenCalledWith('req-1');
+        });
+    });
+
+    describe('setRequestInCache', () => {
+        it('should call repository set with default TTL', async () => {
+            const request = { id: 'req-1' } as any;
+            await service.setRequestInCache(request);
+            expect(cacheRepo.set).toHaveBeenCalledWith(request, 300);
+        });
+
+        it('should call repository set with custom TTL', async () => {
+            const request = { id: 'req-1' } as any;
+            await service.setRequestInCache(request, 600);
+            expect(cacheRepo.set).toHaveBeenCalledWith(request, 600);
+        });
+    });
+
+    describe('updateRequest', () => {
+        it('should throw error if request not found', async () => {
+            cacheRepo.get.mockResolvedValue(null);
+            
+            await expect(service.updateRequest('req-1', {})).rejects.toThrow(
+                'Request with ID req-1 not found'
+            );
+        });
+
+        it('should update request and save to cache', async () => {
+            const existing = { id: 'req-1', status: RequestStatusEnum.SEARCHING } as any;
+            cacheRepo.get.mockResolvedValue(existing);
+            
+            const updates = { status: RequestStatusEnum.ACCEPTED };
+            const result = await service.updateRequest('req-1', updates);
+            
+            expect(result.status).toBe(RequestStatusEnum.ACCEPTED);
+            expect(cacheRepo.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    id: 'req-1',
+                    status: RequestStatusEnum.ACCEPTED,
+                }),
+                300
+            );
+        });
+    });
+
+    describe('deleteRequestFromCache', () => {
+        it('should call repository delete', async () => {
+            await service.deleteRequestFromCache('req-1');
+            expect(cacheRepo.delete).toHaveBeenCalledWith('req-1');
+        });
+    });
+
+});
