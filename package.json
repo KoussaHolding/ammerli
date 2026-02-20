@@ -22,9 +22,17 @@
     "db:drop": "env-cmd ts-node ./node_modules/typeorm-extension/bin/cli.cjs db:drop",
     "seed:run": "env-cmd ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:run",
     "seed:create": "env-cmd ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:create",
-    "prepare": "husky || true",
+    "prepare": "husky",
+    "test": "jest",
+    "lint": "eslint \"src/**/*.ts\" --fix",
     "test:e2e": "env-cmd jest --config ./test/jest-e2e.json",
     "test:e2e:sqlite": "jest --config ./test/jest-e2e.json --setupFiles ./test/setup-sqlite.ts"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@golevelup/nestjs-rabbitmq": "^7.1.1",
@@ -77,6 +85,8 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.4.2",
+    "@commitlint/config-conventional": "^20.4.2",
     "@nestjs/cli": "^11.0.14",
     "@nestjs/schematics": "^11.0.9",
     "@nestjs/testing": "^11.1.11",
@@ -96,6 +106,7 @@
     "env-cmd": "^11.0.0",
     "husky": "^9.1.7",
     "jest": "^30.2.0",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "prettier-plugin-organize-imports": "^4.3.0",
     "sass-embedded": "^1.97.1",
