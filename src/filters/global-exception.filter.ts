@@ -33,7 +33,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse();
     const request = ctx.getRequest();
 
-    this.i18n = request.i18nContext;
+    this.i18n = I18nContext.current(host);
     this.debug = this.configService.getOrThrow('app.debug', { infer: true });
 
     let error: ErrorDto;
@@ -102,7 +102,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     };
     const statusCode = exception.getStatus();
 
-    const translatedMessage = this.i18n.t(r.errorCode as any) as any;
+    const translatedMessage = this.i18n?.t(r.errorCode as any) as any;
+
+    this.logger.debug(
+      `Translating ${r.errorCode}: ${translatedMessage} (Lang: ${this.i18n?.lang})`,
+    );
 
     const errorRes: ErrorDto = {
       timestamp: new Date().toISOString(),
@@ -110,7 +114,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       error: STATUS_CODES[statusCode],
       errorCode: r.errorCode,
       message:
-        typeof translatedMessage === 'string' ? translatedMessage : r.message,
+        typeof translatedMessage === 'string' &&
+        translatedMessage !== r.errorCode
+          ? translatedMessage
+          : r.message,
     };
 
     this.logger.debug(exception);

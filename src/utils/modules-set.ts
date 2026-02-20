@@ -83,7 +83,10 @@ function generateModulesSet() {
           infer: true,
         }),
         loaderOptions: {
-          path: path.join(__dirname, '/../i18n/'),
+          path: path.join(
+            process.cwd(),
+            process.env.NODE_ENV === 'production' ? 'dist/i18n' : 'src/i18n',
+          ),
           watch: isLocal,
         },
         typesOutputPath: path.join(
