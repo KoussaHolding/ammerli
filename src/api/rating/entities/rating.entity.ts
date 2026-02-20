@@ -1,9 +1,16 @@
-import { Uuid } from '@/common/types/common.type';
-import { AbstractEntity } from '@/database/entities/abstract.entity';
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { UserEntity } from '@/api/user/entities/user.entity';
 import { DriverEntity } from '@/api/driver/entities/driver.entity';
 import { RequestEntity } from '@/api/request/entities/request.entity';
+import { UserEntity } from '@/api/user/entities/user.entity';
+import { Uuid } from '@/common/types/common.type';
+import { AbstractEntity } from '@/database/entities/abstract.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('ratings')
 export class RatingEntity extends AbstractEntity {

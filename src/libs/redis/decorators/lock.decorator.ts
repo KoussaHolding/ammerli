@@ -1,4 +1,4 @@
-import { ErrorCode, ErrorMessageConstants } from '@/constants/error-code.constant';
+import { ErrorMessageConstants } from '@/constants/error-code.constant';
 import { LogConstants } from '@/constants/log.constant';
 import { AppException } from '@/exceptions/app.exception';
 import Redlock from 'redlock';
@@ -23,7 +23,10 @@ export function UseDistributedLock(options: RedlockOptions) {
       const redlock: Redlock = (this as any).redlock;
 
       if (!redlock) {
-        throw new AppException(ErrorMessageConstants.SYSTEM.REDLOCK_CLIENT_NOT_FOUND.CODE, 500);
+        throw new AppException(
+          ErrorMessageConstants.SYSTEM.REDLOCK_CLIENT_NOT_FOUND,
+          500,
+        );
       }
 
       // Parse dynamic keys (e.g., "driver:{0}")
@@ -46,9 +49,7 @@ export function UseDistributedLock(options: RedlockOptions) {
           // Log a warning but don't crash the request
           const logger = (this as any).logger; // Assumes your service has a logger
           if (logger)
-            logger.warn(
-              `${LogConstants.SYSTEM.WARN_LOCK_BUSY}: ${lockKey}`,
-            );
+            logger.warn(`${LogConstants.SYSTEM.WARN_LOCK_BUSY}: ${lockKey}`);
           return;
         }
         throw err;

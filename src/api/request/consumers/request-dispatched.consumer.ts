@@ -2,10 +2,13 @@ import { RequestResDto } from '@/api/request/dto/request.res.dto';
 import { DriverLocationResDto } from '@/api/tracking/dto/driver-location.res.dto';
 import { TrackingGateway } from '@/api/tracking/tracking.gateway';
 import { LogConstants } from '@/constants/log.constant';
+import {
+  RabbitMqExchange,
+  RabbitMqRoutingKey,
+} from '@/libs/rabbitMq/domain-events';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
 import { AppLogger } from 'src/logger/logger.service';
-import { RabbitMqExchange, RabbitMqRoutingKey } from '@/libs/rabbitMq/domain-events';
 
 @Injectable()
 export class RequestDispatchedConsumer {

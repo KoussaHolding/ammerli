@@ -1,20 +1,20 @@
+import { DriverEntity } from '@/api/driver/entities/driver.entity';
+import { UserEntity } from '@/api/user/entities/user.entity';
 import { Uuid } from '@/common/types/common.type';
+import { dbEnumType } from '@/common/utils/db-types';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import {
-    Column,
-    Entity,
-    PrimaryGeneratedColumn,
-    JoinColumn,
-    ManyToOne,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
-import { UserEntity } from '@/api/user/entities/user.entity';
-import { DriverEntity } from '@/api/driver/entities/driver.entity';
 import { RequestStatusEnum } from '../enums/request-status.enum';
-import { dbEnumType } from '@/common/utils/db-types';
 
 /**
  * Persistent representation of a customer service request.
- * Requests start as ephemeral cache entries and are persisted here upon transition 
+ * Requests start as ephemeral cache entries and are persisted here upon transition
  * to terminal states (Completed, Cancelled, Expired) or during active service (Accepted).
  *
  * @class RequestEntity

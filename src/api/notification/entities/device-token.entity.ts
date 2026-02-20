@@ -4,7 +4,9 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('device_tokens')
 export class DeviceTokenEntity extends AbstractEntity {
-  @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_device_token_id' })
+  @PrimaryGeneratedColumn('uuid', {
+    primaryKeyConstraintName: 'PK_device_token_id',
+  })
   id!: Uuid;
 
   @Column()

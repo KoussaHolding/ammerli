@@ -1,10 +1,10 @@
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Server, Socket } from 'socket.io';
 import { AppLogger } from 'src/logger/logger.service';
 import { TrackingGateway } from './tracking.gateway';
 import { TrackingService } from './tracking.service';
-import { Socket, Server } from 'socket.io';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 
 describe('TrackingGateway', () => {
   let gateway: TrackingGateway;
@@ -26,10 +26,10 @@ describe('TrackingGateway', () => {
       error: jest.fn(),
     };
     const jwtServiceMock = {
-        verify: jest.fn(),
+      verify: jest.fn(),
     };
     const configServiceMock = {
-        get: jest.fn(),
+      get: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -92,7 +92,7 @@ describe('TrackingGateway', () => {
       configService.get.mockReturnValue('secret');
 
       await gateway.handleConnection(socket);
-      
+
       expect(socket.data.userId).toBe(userId);
       expect(socket.join).toHaveBeenCalledWith(`user_${userId}`);
     });
@@ -103,7 +103,9 @@ describe('TrackingGateway', () => {
       const driverId = 'driver-1';
       socket.data = { driverId };
       gateway.handleDisconnect(socket);
-      expect(logger.log).toHaveBeenCalledWith(`Driver disconnected: ${driverId}`);
+      expect(logger.log).toHaveBeenCalledWith(
+        `Driver disconnected: ${driverId}`,
+      );
     });
   });
 
@@ -140,9 +142,9 @@ describe('TrackingGateway', () => {
       expect(socket.emit).toHaveBeenCalledWith(
         'location_ack',
         expect.objectContaining({
-            driverId,
-            updated: true,
-        })
+          driverId,
+          updated: true,
+        }),
       );
     });
 
@@ -168,57 +170,59 @@ describe('TrackingGateway', () => {
 
   describe('sendAlert', () => {
     it('should emit new_alert to driver room', async () => {
-        const driverId = 'driver-1';
-        const payload = { type: 'NEW_REQUEST' };
-        
-        await gateway.sendAlert(driverId, payload);
-        
-        expect(server.to).toHaveBeenCalledWith(`driver_${driverId}`);
-        expect(server.emit).toHaveBeenCalledWith('new_alert', payload);
+      const driverId = 'driver-1';
+      const payload = { type: 'NEW_REQUEST' };
+
+      await gateway.sendAlert(driverId, payload);
+
+      expect(server.to).toHaveBeenCalledWith(`driver_${driverId}`);
+      expect(server.emit).toHaveBeenCalledWith('new_alert', payload);
     });
 
     it('should log error if emit fails', async () => {
-        const driverId = 'driver-1';
-        const error = new Error('Emit failed');
-        server.emit.mockImplementation(() => { throw error; });
+      const driverId = 'driver-1';
+      const error = new Error('Emit failed');
+      server.emit.mockImplementation(() => {
+        throw error;
+      });
 
-        await gateway.sendAlert(driverId, {});
-        
-        expect(logger.error).toHaveBeenCalledWith(
-            `Failed to send alert to driver ${driverId}`,
-            error.stack
-        );
+      await gateway.sendAlert(driverId, {});
+
+      expect(logger.error).toHaveBeenCalledWith(
+        `Failed to send alert to driver ${driverId}`,
+        error.stack,
+      );
     });
   });
 
   describe('handleRequestEvents', () => {
     it('should emit request_accepted to user room', async () => {
-        const userId = 'user-1';
-        const msg = { status: 'ACCEPTED', user: { id: userId } };
-        
-        await gateway.handleRequestEvents(msg);
+      const userId = 'user-1';
+      const msg = { status: 'ACCEPTED', user: { id: userId } };
 
-        expect(server.to).toHaveBeenCalledWith(`user_${userId}`);
-        expect(server.emit).toHaveBeenCalledWith('request_accepted', msg);
+      await gateway.handleRequestEvents(msg);
+
+      expect(server.to).toHaveBeenCalledWith(`user_${userId}`);
+      expect(server.emit).toHaveBeenCalledWith('request_accepted', msg);
     });
 
     it('should not emit if status is unknown', async () => {
-        const userId = 'user-1';
-        const msg = { status: 'UNKNOWN', user: { id: userId } };
-        
-        await gateway.handleRequestEvents(msg);
+      const userId = 'user-1';
+      const msg = { status: 'UNKNOWN', user: { id: userId } };
 
-        expect(server.to).not.toHaveBeenCalled();
-        expect(server.emit).not.toHaveBeenCalled();
+      await gateway.handleRequestEvents(msg);
+
+      expect(server.to).not.toHaveBeenCalled();
+      expect(server.emit).not.toHaveBeenCalled();
     });
     it('should emit ride_started to user room when status is IN_PROGRESS', async () => {
-        const userId = 'user-1';
-        const msg = { status: 'IN_PROGRESS', user: { id: userId } };
-        
-        await gateway.handleRequestEvents(msg);
+      const userId = 'user-1';
+      const msg = { status: 'IN_PROGRESS', user: { id: userId } };
 
-        expect(server.to).toHaveBeenCalledWith(`user_${userId}`);
-        expect(server.emit).toHaveBeenCalledWith('ride_started', msg);
+      await gateway.handleRequestEvents(msg);
+
+      expect(server.to).toHaveBeenCalledWith(`user_${userId}`);
+      expect(server.emit).toHaveBeenCalledWith('ride_started', msg);
     });
   });
 });

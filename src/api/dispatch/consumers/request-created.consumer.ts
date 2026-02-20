@@ -4,7 +4,10 @@ import { RequestStatusEnum } from '@/api/request/enums/request-status.enum';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
 
-import { RabbitMqExchange, RabbitMqRoutingKey } from '@/libs/rabbitMq/domain-events';
+import {
+  RabbitMqExchange,
+  RabbitMqRoutingKey,
+} from '@/libs/rabbitMq/domain-events';
 
 @Injectable()
 export class RequestCreatedConsumer {

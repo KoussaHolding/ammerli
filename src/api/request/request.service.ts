@@ -2,26 +2,29 @@ import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Uuid } from '@/common/types/common.type';
+import { ErrorMessageConstants } from '@/constants/error-code.constant';
+import { LogConstants } from '@/constants/log.constant';
+import {
+  RabbitMqExchange,
+  RabbitMqRoutingKey,
+} from '@/libs/rabbitMq/domain-events';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { AppLogger } from 'src/logger/logger.service';
 import { UserResDto } from '../user/dto/user.res.dto';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { RequestResDto } from './dto/request.res.dto';
 import { RequestStatusEnum } from './enums/request-status.enum';
 import { RequestCacheRepository } from './request-cache.repository';
-import { RabbitMqExchange, RabbitMqRoutingKey } from '@/libs/rabbitMq/domain-events';
-import { LogConstants } from '@/constants/log.constant';
-import { ErrorMessageConstants } from '@/constants/error-code.constant';
-import { AppLogger } from 'src/logger/logger.service';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { RequestEntity } from './entities/request.entity';
-import { OrderService } from '../order/order.service';
+import { In, Repository } from 'typeorm';
 import { OrderStatusEnum } from '../order/entities/order.entity';
+import { OrderService } from '../order/order.service';
+import { RequestEntity } from './entities/request.entity';
 
 /**
  * Service managing the lifecycle of customer requests.
- * Handles temporary storage in Redis for live requests and persistent storage in Postgres 
+ * Handles temporary storage in Redis for live requests and persistent storage in Postgres
  * for finalized requests. Orchestrates event-driven communication via RabbitMQ.
  *
  * @class RequestService
@@ -119,7 +122,7 @@ export class RequestService {
     const existing = await this.getRequestFromCache(requestId);
 
     if (!existing) {
-      throw new Error(ErrorMessageConstants.REQUEST.ID_NOT_FOUND(requestId).DEBUG);
+      throw new Error(ErrorMessageConstants.REQUEST.ID_NOT_FOUND);
     }
 
     const updated: RequestResDto = { ...existing, ...updates };
@@ -150,7 +153,7 @@ export class RequestService {
   async finalizeRequest(requestId: string, status: RequestStatusEnum) {
     const request = await this.getRequestFromCache(requestId);
     if (!request) {
-      throw new Error(ErrorMessageConstants.REQUEST.NOT_FOUND.DEBUG);
+      throw new Error(ErrorMessageConstants.REQUEST.NOT_FOUND);
     }
 
     request.status = status;

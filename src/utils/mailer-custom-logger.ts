@@ -19,7 +19,9 @@ class MailerCustomLogger implements NodeMailerLogger {
     ],
   ) {}
 
-  level(_level: LoggerLevel): void {}
+  level(_level: LoggerLevel): void {
+    // skip
+  }
 
   trace(...params: any[]): void {
     if (this.logLevels.includes('trace')) {

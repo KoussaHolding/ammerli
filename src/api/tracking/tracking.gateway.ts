@@ -1,7 +1,7 @@
-import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
-import { RabbitMqExchange } from '@/libs/rabbitMq/domain-events';
-import { LogConstants } from '@/constants/log.constant';
 import { ErrorMessageConstants } from '@/constants/error-code.constant';
+import { LogConstants } from '@/constants/log.constant';
+import { RabbitMqExchange } from '@/libs/rabbitMq/domain-events';
+import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -46,28 +46,30 @@ export class TrackingGateway
 
     // 1. Driver Connection
     if (driverId) {
-        client.data.driverId = driverId;
-        await client.join(`driver_${driverId}`); // Join driver room
-        this.logger.log(`${LogConstants.TRACKING.DRIVER_CONNECTED}: ${driverId}`);
-        return;
+      client.data.driverId = driverId;
+      await client.join(`driver_${driverId}`); // Join driver room
+      this.logger.log(`${LogConstants.TRACKING.DRIVER_CONNECTED}: ${driverId}`);
+      return;
     }
 
     // 2. User Connection (via JWT)
     if (token) {
-        try {
-            const payload = this.jwtService.verify(token, {
-                secret: this.configService.get('auth.secret'),
-            });
-            const userId = payload.id;
-            client.data.userId = userId;
-            await client.join(`user_${userId}`); // Join user room
-            this.logger.log(`${LogConstants.TRACKING.USER_CONNECTED}: ${userId}`);
-            return;
-        } catch (error) {
-            this.logger.warn(`${LogConstants.TRACKING.INVALID_TOKEN}: ${error.message}`);
-            client.disconnect();
-            return;
-        }
+      try {
+        const payload = this.jwtService.verify(token, {
+          secret: this.configService.get('auth.secret'),
+        });
+        const userId = payload.id;
+        client.data.userId = userId;
+        await client.join(`user_${userId}`); // Join user room
+        this.logger.log(`${LogConstants.TRACKING.USER_CONNECTED}: ${userId}`);
+        return;
+      } catch (error) {
+        this.logger.warn(
+          `${LogConstants.TRACKING.INVALID_TOKEN}: ${error.message}`,
+        );
+        client.disconnect();
+        return;
+      }
     }
 
     // 3. Unauthorized
@@ -78,12 +80,14 @@ export class TrackingGateway
   handleDisconnect(client: Socket): void {
     const driverId = client.data?.driverId as string | undefined;
     if (driverId) {
-      this.logger.log(`${LogConstants.TRACKING.DRIVER_DISCONNECTED}: ${driverId}`);
+      this.logger.log(
+        `${LogConstants.TRACKING.DRIVER_DISCONNECTED}: ${driverId}`,
+      );
     }
 
     const userId = client.data?.userId as string | undefined;
     if (userId) {
-        this.logger.log(`${LogConstants.TRACKING.USER_DISCONNECTED}: ${userId}`);
+      this.logger.log(`${LogConstants.TRACKING.USER_DISCONNECTED}: ${userId}`);
     }
   }
 
@@ -97,34 +101,38 @@ export class TrackingGateway
   })
   async handleRequestEvents(msg: any) {
     // msg is the RequestResDto payload
-    
+
     const userId = msg.user?.id || msg.userId;
     const driverId = msg.driverId;
     const status = msg.status;
 
-    this.logger.log(`${LogConstants.TRACKING.PROCESSING_EVENT} ${msg.id}: ${status}`);
+    this.logger.log(
+      `${LogConstants.TRACKING.PROCESSING_EVENT} ${msg.id}: ${status}`,
+    );
 
     // Forward to User
     if (userId) {
-        const eventMap: Record<string, string> = {
-            'ACCEPTED': 'request_accepted',
-            'ARRIVED': 'driver_arrived',
-            'COMPLETED': 'request_completed',
-            'CANCELLED': 'request_cancelled',
-            'IN_PROGRESS': 'ride_started',
-        };
-        
-        const eventName = eventMap[status];
-        if (eventName) {
-            // Broadcast to all instances
-            this.server.to(`user_${userId}`).emit(eventName, msg);
-            this.logger.log(`${LogConstants.TRACKING.EMITTED_EVENT} ${eventName} to user_${userId}`);
-        }
+      const eventMap: Record<string, string> = {
+        ACCEPTED: 'request_accepted',
+        ARRIVED: 'driver_arrived',
+        COMPLETED: 'request_completed',
+        CANCELLED: 'request_cancelled',
+        IN_PROGRESS: 'ride_started',
+      };
+
+      const eventName = eventMap[status];
+      if (eventName) {
+        // Broadcast to all instances
+        this.server.to(`user_${userId}`).emit(eventName, msg);
+        this.logger.log(
+          `${LogConstants.TRACKING.EMITTED_EVENT} ${eventName} to user_${userId}`,
+        );
+      }
     }
 
     // Forward to Driver (if needed)
     if (driverId) {
-         // Logic for driver updates
+      // Logic for driver updates
     }
   }
 
@@ -138,20 +146,24 @@ export class TrackingGateway
   ) {
     const driverId = client.data?.driverId as string | undefined;
     if (!driverId) {
-       client.emit('error', { message: ErrorMessageConstants.TRACKING.NOT_IDENTIFIED.DEBUG });
-       return;
+      client.emit('error', {
+        message: ErrorMessageConstants.TRACKING.NOT_IDENTIFIED,
+      });
+      return;
     }
 
     const { lat, lng } = data ?? {};
     if (lat == null || lng == null) {
-      client.emit('error', { message: ErrorMessageConstants.TRACKING.INVALID_PAYLOAD.DEBUG });
+      client.emit('error', {
+        message: ErrorMessageConstants.TRACKING.INVALID_PAYLOAD,
+      });
       return;
     }
 
     try {
       // 1. Update location in Redis
       if (!this.trackingService) {
-          throw new Error(ErrorMessageConstants.TRACKING.SERVICE_NOT_INITIALIZED.DEBUG);
+        throw new Error(ErrorMessageConstants.TRACKING.SERVICE_NOT_INITIALIZED);
       }
 
       const updated = await this.trackingService.updateDriverLocation(
@@ -166,7 +178,7 @@ export class TrackingGateway
         timestamp: Date.now(),
       });
 
-      // 2. Broadcast to users? 
+      // 2. Broadcast to users?
       // ideally we should only emit to users tracking this driver.
       // But for simple "Uber-like" nearby, drivers are polled via API.
       // Real-time tracking of assigned driver:
@@ -178,17 +190,16 @@ export class TrackingGateway
       // But user said "gps not working", referring to "Locate" button or map center.
       // Real-time driver pin movement:
       // If we want that, we need to look up the user.
-      
     } catch (error) {
       if (this.logger) {
         this.logger.error(
-          `${ErrorMessageConstants.TRACKING.UPDATE_FAILED.DEBUG} for driver ${driverId}`,
+          `${ErrorMessageConstants.TRACKING.UPDATE_FAILED} for driver ${driverId}`,
           error?.stack,
         );
       }
       client.emit('error', {
         driverId,
-        message: ErrorMessageConstants.TRACKING.UPDATE_FAILED.DEBUG,
+        message: ErrorMessageConstants.TRACKING.UPDATE_FAILED,
         debug: error?.message || String(error),
       });
     }

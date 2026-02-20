@@ -1,3 +1,4 @@
+import { ApiPublic } from '@/decorators/http.decorators';
 import {
   Body,
   Controller,
@@ -8,9 +9,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ApiPublic } from '@/decorators/http.decorators';
 import { CreateProductDto } from './dto/create-product.dto';
-import { ProductResDto } from './dto/product.res.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductEntity } from './entities/product.entity';
 import { ProductService } from './product.service';
@@ -24,7 +23,9 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
-  async create(@Body() createProductDto: CreateProductDto): Promise<ProductEntity> {
+  async create(
+    @Body() createProductDto: CreateProductDto,
+  ): Promise<ProductEntity> {
     return await this.productService.create(createProductDto);
   }
 

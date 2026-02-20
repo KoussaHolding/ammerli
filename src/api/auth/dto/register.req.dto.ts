@@ -1,6 +1,10 @@
 import { DriverTypeEnum } from '@/api/driver/enums/driver-type.enum';
 import { UserRoleEnum } from '@/api/user/enums/user-role.enum';
-import { EnumField, PasswordField, StringField } from '@/decorators/field.decorators';
+import {
+  EnumField,
+  PasswordField,
+  StringField,
+} from '@/decorators/field.decorators';
 import { IsNotEmpty, IsPhoneNumber, ValidateIf } from 'class-validator';
 
 /**

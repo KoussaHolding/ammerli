@@ -1,10 +1,10 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreateClient1767098747005 implements MigrationInterface {
-    name = 'CreateClient1767098747005'
+  name = 'CreateClient1767098747005';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE "Clients" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "user_id" uuid,
@@ -16,19 +16,18 @@ export class CreateClient1767098747005 implements MigrationInterface {
                 CONSTRAINT "PK_Client_id" PRIMARY KEY ("id")
             )
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "Clients"
             ADD CONSTRAINT "FK_7fbf0ccdd3214a8af9268292162" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             ALTER TABLE "Clients" DROP CONSTRAINT "FK_7fbf0ccdd3214a8af9268292162"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP TABLE "Clients"
         `);
-    }
-
+  }
 }

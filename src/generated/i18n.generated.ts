@@ -5,6 +5,12 @@
 import type { Path } from "nestjs-i18n";
 /* prettier-ignore */
 export type I18nTranslations = {
+    "auth": {
+        "error": {
+            "forbidden": string;
+            "invalid_role_data": string;
+        };
+    };
     "common": {
         "validation": {
             "error": string;
@@ -12,6 +18,39 @@ export type I18nTranslations = {
         "error": {
             "internal_server_error": string;
             "entity_not_found": string;
+            "unexpected": string;
+        };
+    };
+    "driver": {
+        "error": {
+            "not_found": string;
+            "offline": string;
+            "busy": string;
+            "too_far": string;
+            "not_authorized": string;
+        };
+    };
+    "request": {
+        "error": {
+            "not_found": string;
+            "not_available": string;
+            "id_not_found": string;
+        };
+    };
+    "system": {
+        "error": {
+            "lock_busy": string;
+            "redis_failure": string;
+            "redlock_client_not_found": string;
+            "redis_script_not_loaded": string;
+        };
+    };
+    "tracking": {
+        "error": {
+            "service_not_initialized": string;
+            "not_identified": string;
+            "invalid_payload": string;
+            "update_failed": string;
         };
     };
     "user": {
@@ -21,10 +60,12 @@ export type I18nTranslations = {
         };
         "validation": {
             "is_empty": string;
+            "is_invalid": string;
         };
         "error": {
             "username_or_email_exists": string;
             "email_exists": string;
+            "phone_exists": string;
             "not_found": string;
             "invalid_password": string;
             "invalid_token": string;

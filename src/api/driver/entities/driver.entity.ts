@@ -8,9 +8,9 @@ import {
 
 import { UserEntity } from '@/api/user/entities/user.entity';
 import { Uuid } from '@/common/types/common.type';
+import { dbEnumType } from '@/common/utils/db-types';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import { DriverTypeEnum } from '../enums/driver-type.enum';
-import { dbEnumType } from '@/common/utils/db-types';
 
 @Entity('drivers')
 export class DriverEntity extends AbstractEntity {

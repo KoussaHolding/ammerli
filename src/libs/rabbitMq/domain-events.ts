@@ -11,7 +11,7 @@ export enum RabbitMqRoutingKey {
   REQUEST_ACCEPTED = 'request.accepted',
   REQUEST_DISPATCHED = 'request.dispatched', // Matched with drivers
   REQUEST_CANCELLED = 'request.cancelled',
-  
+
   // Ride Lifecycle
   DRIVER_ARRIVED = 'ride.driver_arrived',
   RIDE_STARTED = 'ride.started',

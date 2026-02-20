@@ -1,16 +1,16 @@
-import { Module } from '@nestjs/common';
 import { RabbitMqLibModule } from '@/libs/rabbitMq/rabbitMq.module';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RequestModule } from '../request/request.module';
-import { DispatchService } from './dispatch.service';
-import { DispatchController } from './dispatch.controller';
 import { DriverModule } from '../driver/driver.module';
-import { OrderModule } from '../order/order.module';
-import { MatchingService } from './matching.service';
 import { DriverEntity } from '../driver/entities/driver.entity';
+import { OrderModule } from '../order/order.module';
+import { RequestModule } from '../request/request.module';
+import { DispatchController } from './dispatch.controller';
+import { DispatchService } from './dispatch.service';
+import { MatchingService } from './matching.service';
 
-import { RequestCreatedConsumer } from './consumers/request-created.consumer';
 import { AuthModule } from '../auth/auth.module';
+import { RequestCreatedConsumer } from './consumers/request-created.consumer';
 
 @Module({
   imports: [
@@ -19,7 +19,7 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
     RequestModule,
     DriverModule,
-    OrderModule
+    OrderModule,
   ],
   controllers: [DispatchController],
   providers: [DispatchService, MatchingService, RequestCreatedConsumer],

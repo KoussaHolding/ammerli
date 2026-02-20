@@ -3,7 +3,7 @@ import { CursorPaginatedDto } from '@/common/dto/cursor-pagination/paginated.dto
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { SYSTEM_USER_ID } from '@/constants/app.constant';
-import { ErrorCode, ErrorMessageConstants } from '@/constants/error-code.constant';
+import { ErrorMessageConstants } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
 import { buildPaginator } from '@/utils/cursor-pagination';
 import { paginate } from '@/utils/offset-pagination';
@@ -57,7 +57,7 @@ export class UserService {
     });
 
     if (user) {
-      throw new ValidationException(ErrorMessageConstants.USER.PHONE_EXISTS.CODE);
+      throw new ValidationException(ErrorMessageConstants.USER.PHONE_EXISTS);
     }
 
     const newUser = new UserEntity({

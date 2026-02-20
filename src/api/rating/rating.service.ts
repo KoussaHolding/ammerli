@@ -1,15 +1,19 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { RatingEntity } from './entities/rating.entity';
-import { CreateRatingDto } from './dto/create-rating.dto';
-import { RequestEntity } from '@/api/request/entities/request.entity';
 import { DriverMetadataService } from '@/api/driver/driver-metadata.service';
-import { AppLogger } from 'src/logger/logger.service';
-import { Uuid } from '@/common/types/common.type';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { RequestStatusEnum } from '@/api/request/enums/request-status.enum';
 import { DriverEntity } from '@/api/driver/entities/driver.entity';
+import { RequestEntity } from '@/api/request/entities/request.entity';
+import { RequestStatusEnum } from '@/api/request/enums/request-status.enum';
+import { Uuid } from '@/common/types/common.type';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { InjectRepository } from '@nestjs/typeorm';
+import { AppLogger } from 'src/logger/logger.service';
+import { DataSource, Repository } from 'typeorm';
+import { CreateRatingDto } from './dto/create-rating.dto';
+import { RatingEntity } from './entities/rating.entity';
 
 @Injectable()
 export class RatingService {
@@ -41,18 +45,20 @@ export class RatingService {
       throw new BadRequestException('You can only rate your own requests');
     }
 
-    if (request.status !== RequestStatusEnum.COMPLETED) { 
+    if (request.status !== RequestStatusEnum.COMPLETED) {
       throw new BadRequestException('Request is not completed yet');
     }
 
     // Check if already rated
-    const existing = await this.ratingRepo.findOne({ where: { requestId: dto.requestId as Uuid } });
+    const existing = await this.ratingRepo.findOne({
+      where: { requestId: dto.requestId as Uuid },
+    });
     if (existing) {
       throw new BadRequestException('Request already rated');
     }
 
     if (!request.driverId) {
-        throw new BadRequestException('No driver associated with this request');
+      throw new BadRequestException('No driver associated with this request');
     }
 
     // 2. Create Rating Transactionally (Update Driver Metadata too)
@@ -79,28 +85,27 @@ export class RatingService {
         .addSelect('COUNT(r.id)', 'count')
         .where('r.targetId = :driverId', { driverId: request.driverId })
         .getRawOne();
-      
+
       const avg = result ? result.avg : null;
       const count = result ? result.count : 0;
-      
+
       const newRating = avg ? parseFloat(avg) : dto.rating;
 
-      await this.driverMetadataService.updateMetadata(request.driverId, { 
-          rating: newRating,
-          dailyJobCount: undefined // We don't update job count here, strictly speaking. Matching service logic probably updates it elsewhere.
+      await this.driverMetadataService.updateMetadata(request.driverId, {
+        rating: newRating,
+        dailyJobCount: undefined, // We don't update job count here, strictly speaking. Matching service logic probably updates it elsewhere.
       });
 
       // Update Driver Entity (Postgres)
       await queryRunner.manager.update(DriverEntity, request.driverId, {
-          rating: newRating,
-          // totalJobs: count // Optional: update total jobs if reliable
+        rating: newRating,
+        // totalJobs: count // Optional: update total jobs if reliable
       });
 
       await queryRunner.commitTransaction();
 
       this.logger.log(`Rating created for request ${dto.requestId}`);
       return rating;
-
     } catch (err) {
       await queryRunner.rollbackTransaction();
       this.logger.error('Failed to create rating', err);

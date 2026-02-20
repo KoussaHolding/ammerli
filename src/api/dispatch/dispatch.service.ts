@@ -1,4 +1,4 @@
-import { ErrorCode, ErrorMessageConstants } from '@/constants/error-code.constant';
+import { ErrorMessageConstants } from '@/constants/error-code.constant';
 import { LogConstants } from '@/constants/log.constant';
 import { RedisConstants } from '@/constants/redis.constants';
 import { Instrument } from '@/decorators/instrument.decorator';
@@ -6,8 +6,8 @@ import { AppException } from '@/exceptions/app.exception';
 import { RedisLibsService } from '@/libs/redis/redis-libs.service';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
-import { AppLogger } from 'src/logger/logger.service';
 import { InjectRepository } from '@nestjs/typeorm';
+import { AppLogger } from 'src/logger/logger.service';
 import { Repository } from 'typeorm';
 import { DriverEntity } from '../driver/entities/driver.entity';
 import { RequestResDto } from '../request/dto/request.res.dto';
@@ -15,9 +15,9 @@ import { RequestStatusEnum } from '../request/enums/request-status.enum';
 import { RequestService } from '../request/request.service';
 import { DriverLocationResDto } from '../tracking/dto/driver-location.res.dto';
 
-import { MatchingService } from './matching.service';
-import { OrderService } from '../order/order.service';
 import { Uuid } from '@/common/types/common.type';
+import { OrderService } from '../order/order.service';
+import { MatchingService } from './matching.service';
 
 /**
  * Service responsible for orchestrating the dispatch of requests to drivers.
@@ -122,11 +122,7 @@ export class DispatchService {
         requestId: request.id,
         error: error.message,
       });
-      throw new AppException(
-        ErrorMessageConstants.SYSTEM.REDIS_FAILURE.CODE,
-        500,
-        ErrorMessageConstants.SYSTEM.REDIS_FAILURE.DEBUG,
-      );
+      throw new AppException(ErrorMessageConstants.SYSTEM.REDIS_FAILURE, 500);
     }
   }
 
@@ -181,32 +177,20 @@ export class DispatchService {
     });
     if (!driver) {
       this.logger.error(`${LogConstants.DRIVER.NOT_FOUND}: ${userId}`);
-      throw new AppException(
-        ErrorMessageConstants.DRIVER.NOT_FOUND.CODE,
-        404,
-        ErrorMessageConstants.DRIVER.NOT_FOUND.DEBUG,
-      );
+      throw new AppException(ErrorMessageConstants.DRIVER.NOT_FOUND, 404);
     }
     const driverId = driver.id;
 
     const request = await this.requestService.getRequestFromCache(requestId);
     if (!request) {
-      throw new AppException(
-        ErrorMessageConstants.REQUEST.NOT_FOUND.CODE,
-        404,
-        ErrorMessageConstants.REQUEST.NOT_FOUND.DEBUG,
-      );
+      throw new AppException(ErrorMessageConstants.REQUEST.NOT_FOUND, 404);
     }
 
     if (
       request.status !== RequestStatusEnum.DISPATCHED &&
       request.status !== RequestStatusEnum.SEARCHING
     ) {
-      throw new AppException(
-        ErrorMessageConstants.REQUEST.NOT_AVAILABLE.CODE,
-        400,
-        ErrorMessageConstants.REQUEST.NOT_AVAILABLE.DEBUG,
-      );
+      throw new AppException(ErrorMessageConstants.REQUEST.NOT_AVAILABLE, 400);
     }
 
     request.status = RequestStatusEnum.ACCEPTED;

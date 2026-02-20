@@ -18,7 +18,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
 
   /**
    * Constructs the TypeORM configuration object.
-   * Configures database connection pooling, entitiy discovery, migrations, 
+   * Configures database connection pooling, entitiy discovery, migrations,
    * and SSL/TLS security settings based on environment-specific requirements.
    *
    * @returns Fully initialized TypeORM options

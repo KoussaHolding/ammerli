@@ -59,6 +59,6 @@ export class DriverMetadataCacheRepository {
   }
 
   async getDriverMetadata(driverId: string): Promise<Record<string, string>> {
-      return this.redisLibsService.hgetall(this.getKey(driverId));
+    return this.redisLibsService.hgetall(this.getKey(driverId));
   }
 }

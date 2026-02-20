@@ -1,9 +1,9 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as admin from 'firebase-admin';
-import { DeviceTokenEntity } from './entities/device-token.entity';
 import { AppLogger } from 'src/logger/logger.service';
+import { Repository } from 'typeorm';
+import { DeviceTokenEntity } from './entities/device-token.entity';
 
 @Injectable()
 export class NotificationService implements OnModuleInit {
@@ -21,7 +21,7 @@ export class NotificationService implements OnModuleInit {
     if (!admin.apps.length) {
       try {
         admin.initializeApp({
-          credential: admin.credential.applicationDefault(), 
+          credential: admin.credential.applicationDefault(),
           // Ideally: admin.credential.cert(serviceAccount) from config
         });
         this.logger.log('Firebase Admin Initialized');
@@ -31,7 +31,12 @@ export class NotificationService implements OnModuleInit {
     }
   }
 
-  async saveToken(userId: string, token: string, platform: string, userType: 'USER' | 'DRIVER') {
+  async saveToken(
+    userId: string,
+    token: string,
+    platform: string,
+    userType: 'USER' | 'DRIVER',
+  ) {
     // Check if token already exists for this user to avoid duplicates
     const existing = await this.deviceTokenRepo.findOne({ where: { token } });
     if (existing) {
@@ -53,11 +58,16 @@ export class NotificationService implements OnModuleInit {
     return await this.deviceTokenRepo.save(newToken);
   }
 
-  async sendPushNotification(userId: string, title: string, body: string, data?: Record<string, string>) {
+  async sendPushNotification(
+    userId: string,
+    title: string,
+    body: string,
+    data?: Record<string, string>,
+  ) {
     const tokens = await this.deviceTokenRepo.find({ where: { userId } });
     if (!tokens.length) return;
 
-    const fcmTokens = tokens.map(t => t.token);
+    const fcmTokens = tokens.map((t) => t.token);
 
     try {
       const response = await admin.messaging().sendEachForMulticast({
@@ -65,19 +75,20 @@ export class NotificationService implements OnModuleInit {
         notification: { title, body },
         data,
       });
-      
-      this.logger.log(`Sent push to ${userId}: ${response.successCount} success, ${response.failureCount} failed`);
-      
+
+      this.logger.log(
+        `Sent push to ${userId}: ${response.successCount} success, ${response.failureCount} failed`,
+      );
+
       // Cleanup invalid tokens
       if (response.failureCount > 0) {
         response.responses.forEach((resp, idx) => {
           if (!resp.success) {
             // Remove invalid token
-             this.deviceTokenRepo.delete({ token: fcmTokens[idx] });
+            this.deviceTokenRepo.delete({ token: fcmTokens[idx] });
           }
         });
       }
-
     } catch (error) {
       this.logger.error(`Error sending push to ${userId}`, error);
     }

@@ -99,13 +99,16 @@ export class TrackingService {
         keys,
         args,
       );
-      
+
       return result === 1;
     } catch (error) {
       if (this.logger) {
-        this.logger.error(`Failed to update location for ${driverId}`, error.stack);
+        this.logger.error(
+          `Failed to update location for ${driverId}`,
+          error.stack,
+        );
       }
-      throw error; 
+      throw error;
     }
   }
 
@@ -129,43 +132,47 @@ export class TrackingService {
 
   /**
    * Finds nearby drivers within a given radius.
-   * 
+   *
    * @param lat - Latitude.
    * @param lng - Longitude.
    * @param radiusKm - Radius in km.
    * @returns List of driver IDs and their locations.
    */
   async findNearbyDrivers(lat: number, lng: number, radiusKm: number) {
-    const nearby = await this.driverMetadataCacheRepo.findNearbyDrivers(lat, lng, radiusKm);
-    
+    const nearby = await this.driverMetadataCacheRepo.findNearbyDrivers(
+      lat,
+      lng,
+      radiusKm,
+    );
+
     // Filter out offline drivers (double check logic)
-    // Actually, if they are in GEO index but expired in metadata, they might still be there 
+    // Actually, if they are in GEO index but expired in metadata, they might still be there
     // depending on how we handle clean up. ZREM isn't automatic on TTL.
     // So we should check if they are online.
-    
+
     const onlineDrivers = [];
     for (const { driverId } of nearby) {
-        if (await this.isDriverOnline(driverId)) {
-            // Fetch exact location from Metadata or use Request result
-            // The GEO result gives location implicitly, but let's just return ID and position if possible.
-            // ioredis georadius with WITHCOORD is not in our wrapper yet.
-            // But we can get it from metadata if needed, but for now just ID is fine?
-            // Frontend needs position.
-            // Let's rely on cached metadata for position if available.
-            
-            // Wait, we need position on frontend. 
-            // We should update RedisLibsService to support WITHCOORD or fetch metadata.
-            // Let's fetch metadata.
-            const metadata = await this.driverMetadataCacheRepo.getDriverMetadata(driverId);
-            if (metadata && metadata.lat && metadata.lng) {
-                onlineDrivers.push({
-                    id: driverId,
-                    position: [parseFloat(metadata.lat), parseFloat(metadata.lng)]
-                });
-            }
+      if (await this.isDriverOnline(driverId)) {
+        // Fetch exact location from Metadata or use Request result
+        // The GEO result gives location implicitly, but let's just return ID and position if possible.
+        // ioredis georadius with WITHCOORD is not in our wrapper yet.
+        // But we can get it from metadata if needed, but for now just ID is fine?
+        // Frontend needs position.
+        // Let's rely on cached metadata for position if available.
+
+        // Wait, we need position on frontend.
+        // We should update RedisLibsService to support WITHCOORD or fetch metadata.
+        // Let's fetch metadata.
+        const metadata =
+          await this.driverMetadataCacheRepo.getDriverMetadata(driverId);
+        if (metadata && metadata.lat && metadata.lng) {
+          onlineDrivers.push({
+            id: driverId,
+            position: [parseFloat(metadata.lat), parseFloat(metadata.lng)],
+          });
         }
+      }
     }
     return onlineDrivers;
   }
 }
-

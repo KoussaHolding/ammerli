@@ -1,10 +1,10 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class Init1767027247255 implements MigrationInterface {
-    name = 'Init1767027247255'
+  name = 'Init1767027247255';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE "users" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "phone" character varying NOT NULL,
@@ -20,15 +20,15 @@ export class Init1767027247255 implements MigrationInterface {
                 CONSTRAINT "PK_user_id" PRIMARY KEY ("id")
             )
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE UNIQUE INDEX "UQ_user_phone" ON "users" ("phone")
             WHERE "deleted_at" IS NULL
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE UNIQUE INDEX "UQ_user_email" ON "users" ("email")
             WHERE "deleted_at" IS NULL
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TABLE "session" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "hash" character varying(255) NOT NULL,
@@ -40,7 +40,7 @@ export class Init1767027247255 implements MigrationInterface {
                 CONSTRAINT "PK_session_id" PRIMARY KEY ("id")
             )
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             CREATE TABLE "drivers" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "user_id" uuid,
@@ -52,38 +52,37 @@ export class Init1767027247255 implements MigrationInterface {
                 CONSTRAINT "PK_driver_id" PRIMARY KEY ("id")
             )
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "session"
             ADD CONSTRAINT "FK_session_user" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "drivers"
             ADD CONSTRAINT "FK_8e224f1b8f05ace7cfc7c76d03b" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             ALTER TABLE "drivers" DROP CONSTRAINT "FK_8e224f1b8f05ace7cfc7c76d03b"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             ALTER TABLE "session" DROP CONSTRAINT "FK_session_user"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP TABLE "drivers"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP TABLE "session"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP INDEX "public"."UQ_user_email"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP INDEX "public"."UQ_user_phone"
         `);
-        await queryRunner.query(`
+    await queryRunner.query(`
             DROP TABLE "users"
         `);
-    }
-
+  }
 }

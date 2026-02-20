@@ -1,10 +1,10 @@
 import { IEmailJob } from '@/common/interfaces/job.interface';
+import { Uuid } from '@/common/types/common.type';
 import { Branded } from '@/common/types/types';
 import { AllConfigType } from '@/config/config.type';
-import { Uuid } from '@/common/types/common.type';
 import { SYSTEM_USER_ID } from '@/constants/app.constant';
 import { CacheKey } from '@/constants/cache.constant';
-import { ErrorCode, ErrorMessageConstants } from '@/constants/error-code.constant';
+import { ErrorMessageConstants } from '@/constants/error-code.constant';
 import { QueueName } from '@/constants/job.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
 import { createCacheKey } from '@/utils/cache.util';
@@ -23,9 +23,9 @@ import crypto from 'crypto';
 import { EntityManager, Repository } from 'typeorm';
 import { ClientService } from '../client/client.service';
 import { DriverService } from '../driver/driver.service';
-import { UserRoleEnum } from '../user/enums/user-role.enum';
 import { SessionEntity } from '../user/entities/session.entity';
 import { UserEntity } from '../user/entities/user.entity';
+import { UserRoleEnum } from '../user/enums/user-role.enum';
 import { LoginReqDto } from './dto/login.req.dto';
 import { LoginResDto } from './dto/login.res.dto';
 import { RefreshReqDto } from './dto/refresh.req.dto';
@@ -137,8 +137,7 @@ export class AuthService {
 
     if (dto.role === UserRoleEnum.CLIENT && dto.driverType) {
       throw new ValidationException(
-        ErrorMessageConstants.VALIDATION.COMMON.CODE,
-        ErrorMessageConstants.AUTH.INVALID_ROLE_DATA.DEBUG,
+        ErrorMessageConstants.AUTH.INVALID_ROLE_DATA,
       );
     }
 
@@ -147,7 +146,7 @@ export class AuthService {
     });
 
     if (isExistUser) {
-      throw new ValidationException(ErrorMessageConstants.USER.PHONE_EXISTS.CODE);
+      throw new ValidationException(ErrorMessageConstants.USER.PHONE_EXISTS);
     }
 
     const user = userRepo.create({
@@ -310,7 +309,12 @@ export class AuthService {
       await this.jwtService.signAsync(
         {
           id: data.id,
-          role: (await this.userRepository.findOne({ where: { id: data.id as Uuid } }))?.role || '',
+          role:
+            (
+              await this.userRepository.findOne({
+                where: { id: data.id as Uuid },
+              })
+            )?.role || '',
           sessionId: data.sessionId,
         },
         {

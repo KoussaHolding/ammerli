@@ -4,11 +4,9 @@ import {
   Controller,
   Delete,
   Get,
-  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
-  Post,
   Query,
 } from '@nestjs/common';
 
@@ -29,8 +27,6 @@ import { UpdateClientReqDto } from './dto/update-client.req.dto';
 })
 export class ClientController {
   constructor(private readonly ClientService: ClientService) {}
-
-
 
   @Get()
   @ApiPublic()

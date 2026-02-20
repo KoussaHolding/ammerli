@@ -10,12 +10,12 @@ import { SYSTEM_USER_ID } from '@/constants/app.constant';
 import { buildPaginator } from '@/utils/cursor-pagination';
 import { paginate } from '@/utils/offset-pagination';
 import { plainToInstance } from 'class-transformer';
+import { UserEntity } from '../user/entities/user.entity';
 import { DriverResDto } from './dto/driver.res.dto';
 import { ListDriverReqDto } from './dto/list-driver.req.dto';
 import { LoadMoreDriversReqDto } from './dto/load-more-drivers.req.dto';
 import { UpdateDriverReqDto } from './dto/update-driver.req.dto';
 import { DriverEntity } from './entities/driver.entity';
-import { UserEntity } from '../user/entities/user.entity';
 import { DriverTypeEnum } from './enums/driver-type.enum';
 
 @Injectable()
@@ -25,9 +25,10 @@ export class DriverService {
     private readonly driverRepository: Repository<DriverEntity>,
   ) {}
 
-
-
-  async createProfile(user: UserEntity, type: DriverTypeEnum): Promise<DriverEntity> {
+  async createProfile(
+    user: UserEntity,
+    type: DriverTypeEnum,
+  ): Promise<DriverEntity> {
     const driver = this.driverRepository.create({
       user,
       type,

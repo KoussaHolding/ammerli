@@ -1,8 +1,8 @@
+import { Uuid } from '@/common/types/common.type';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrderEntity, OrderStatusEnum } from './entities/order.entity';
-import { Uuid } from '@/common/types/common.type';
 
 @Injectable()
 export class OrderService {
@@ -25,8 +25,8 @@ export class OrderService {
     // Find order by requestId since that's our link
     const order = await this.orderRepo.findOne({ where: { requestId } });
     if (order) {
-        order.status = status;
-        await this.orderRepo.save(order);
+      order.status = status;
+      await this.orderRepo.save(order);
     }
   }
 }

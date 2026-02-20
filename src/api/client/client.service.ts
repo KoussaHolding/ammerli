@@ -10,12 +10,12 @@ import { SYSTEM_USER_ID } from '@/constants/app.constant';
 import { buildPaginator } from '@/utils/cursor-pagination';
 import { paginate } from '@/utils/offset-pagination';
 import { plainToInstance } from 'class-transformer';
+import { UserEntity } from '../user/entities/user.entity';
 import { ClientResDto } from './dto/client.res.dto';
 import { ListClientReqDto } from './dto/list-client.req.dto';
 import { LoadMoreClientsReqDto } from './dto/load-more-clients.req.dto';
 import { UpdateClientReqDto } from './dto/update-client.req.dto';
 import { ClientEntity } from './entities/client.entity';
-import { UserEntity } from '../user/entities/user.entity';
 
 @Injectable()
 export class ClientService {
@@ -23,8 +23,6 @@ export class ClientService {
     @InjectRepository(ClientEntity)
     private readonly ClientRepository: Repository<ClientEntity>,
   ) {}
-
-
 
   async createProfile(user: UserEntity): Promise<ClientEntity> {
     const client = this.ClientRepository.create({

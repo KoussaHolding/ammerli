@@ -8,10 +8,18 @@ describe('MailerCustomLogger', () => {
 
   beforeEach(() => {
     logger = new Logger('TestLogger');
-    jest.spyOn(logger, 'log').mockImplementation(() => {});
-    jest.spyOn(logger, 'debug').mockImplementation(() => {});
-    jest.spyOn(logger, 'warn').mockImplementation(() => {});
-    jest.spyOn(logger, 'error').mockImplementation(() => {});
+    jest.spyOn(logger, 'log').mockImplementation(() => {
+      /* skip */
+    });
+    jest.spyOn(logger, 'debug').mockImplementation(() => {
+      /* skip */
+    });
+    jest.spyOn(logger, 'warn').mockImplementation(() => {
+      /* skip */
+    });
+    jest.spyOn(logger, 'error').mockImplementation(() => {
+      /* skip */
+    });
     mailerCustomLogger = new MailerCustomLogger(logger);
   });
 

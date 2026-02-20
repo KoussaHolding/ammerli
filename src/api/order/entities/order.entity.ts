@@ -1,7 +1,7 @@
-import { AbstractEntity } from '@/database/entities/abstract.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { Uuid } from '@/common/types/common.type';
 import { dbEnumType } from '@/common/utils/db-types';
+import { AbstractEntity } from '@/database/entities/abstract.entity';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum OrderStatusEnum {
   CREATED = 'CREATED',

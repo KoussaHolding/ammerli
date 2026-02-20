@@ -1,9 +1,9 @@
+import { LogConstants } from '@/constants/log.constant';
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { readFile } from 'fs/promises';
 import Redis from 'ioredis';
 import { join } from 'path';
 import { AppLogger } from 'src/logger/logger.service';
-import { LogConstants } from '@/constants/log.constant';
 import { RedisScriptName, RedisScripts } from './redis-scripts.registry';
 
 /**
@@ -94,9 +94,7 @@ export class RedisScriptService implements OnModuleInit {
         new Promise<string>((_, reject) =>
           setTimeout(
             () =>
-              reject(
-                new Error(LogConstants.SYSTEM.ERROR_INIT_SCRIPTS_TIMEOUT),
-              ),
+              reject(new Error(LogConstants.SYSTEM.ERROR_INIT_SCRIPTS_TIMEOUT)),
             5_000,
           ),
         ),

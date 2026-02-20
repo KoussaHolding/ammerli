@@ -1,19 +1,16 @@
-import { Body, Controller, HttpStatus, Param, Post, Get } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Param, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
+import { UserRoleEnum } from '@/api/user/enums/user-role.enum';
+import { Uuid } from '@/common/types/common.type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth } from '@/decorators/http.decorators';
+import { Roles } from '@/decorators/roles.decorator';
 import { UserResDto } from '../user/dto/user.res.dto';
 import { CreateRequestDto } from './dto/create-request.dto';
 import { RequestResDto } from './dto/request.res.dto';
-import { RequestService } from './request.service';
 import { RequestStatusEnum } from './enums/request-status.enum';
-import { Uuid } from '@/common/types/common.type';
-import { Roles } from '@/decorators/roles.decorator';
-import { UserRoleEnum } from '@/api/user/enums/user-role.enum';
-import { RolesGuard } from '@/guards/roles.guard';
-import { UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@/guards/auth.guard';
+import { RequestService } from './request.service';
 
 /**
  * Controller for managing customer requests and driver-side state updates.

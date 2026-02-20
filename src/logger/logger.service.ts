@@ -1,6 +1,4 @@
-import { Inject, Injectable, Scope, Optional } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
+import { Injectable } from '@nestjs/common';
 import {
   createLogger,
   format,

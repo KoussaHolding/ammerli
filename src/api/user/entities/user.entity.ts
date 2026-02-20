@@ -1,4 +1,5 @@
 import { Uuid } from '@/common/types/common.type';
+import { dateTimeType, dbEnumType } from '@/common/utils/db-types';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import { hashPassword as hashPass } from '@/utils/password.util';
 import { Exclude } from 'class-transformer';
@@ -12,9 +13,8 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { SessionEntity } from './session.entity';
-import { dateTimeType, dbEnumType } from '@/common/utils/db-types';
 import { UserRoleEnum } from '../enums/user-role.enum';
+import { SessionEntity } from './session.entity';
 
 /**
  * Persistent entity representing a User in the system.

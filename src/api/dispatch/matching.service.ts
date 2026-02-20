@@ -1,8 +1,10 @@
-import { DriverMetadata, DriverMetadataService } from '../driver/driver-metadata.service';
-import { RequestResDto } from '../request/dto/request.res.dto';
 import { Injectable } from '@nestjs/common';
 import { AppLogger } from 'src/logger/logger.service';
-import { RequestStatusEnum } from '../request/enums/request-status.enum';
+import {
+  DriverMetadata,
+  DriverMetadataService,
+} from '../driver/driver-metadata.service';
+import { RequestResDto } from '../request/dto/request.res.dto';
 
 interface ScoredCandidate {
   driverId: string;

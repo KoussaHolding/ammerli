@@ -3,14 +3,12 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
-  HttpStatus,
-  Inject,
   forwardRef,
+  Get,
+  Inject,
   Param,
   ParseUUIDPipe,
   Patch,
-  Post,
   Query,
 } from '@nestjs/common';
 
@@ -38,8 +36,6 @@ export class DriverController {
     private readonly trackingService: TrackingService,
   ) {}
 
-
-
   @Get()
   @ApiPublic()
   @ApiAuth({
@@ -57,21 +53,21 @@ export class DriverController {
   @ApiPublic() // Or ApiAuth, but public is easier for now. Let's stick to Public for 'Uber-like' feel before login? No, dashboard requires login.
   // Actually, dashboard is protected.
   @ApiAuth({
-      summary: 'Find nearby drivers',
+    summary: 'Find nearby drivers',
   })
   async findNearby(
-      @Query('lat') lat: number,
-      @Query('lng') lng: number,
-      @Query('radius') radius: number = 5,
+    @Query('lat') lat: number,
+    @Query('lng') lng: number,
+    @Query('radius') radius = 5,
   ) {
-      // We need to inject TrackingService properly. 
-      // DriverModule imports TrackingModule?
-      // Let's assume yes or I will check.
-      // If not, I can't use it directly here.
-      // Better to use DriverService which wraps it?
-      // Let's check imports.
-      // For now, I'll assume I can inject TrackingService if I add it to constructor.
-      return this.trackingService.findNearbyDrivers(lat, lng, radius);
+    // We need to inject TrackingService properly.
+    // DriverModule imports TrackingModule?
+    // Let's assume yes or I will check.
+    // If not, I can't use it directly here.
+    // Better to use DriverService which wraps it?
+    // Let's check imports.
+    // For now, I'll assume I can inject TrackingService if I add it to constructor.
+    return this.trackingService.findNearbyDrivers(lat, lng, radius);
   }
 
   @Get('/load-more')

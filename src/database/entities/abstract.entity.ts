@@ -1,3 +1,4 @@
+import { dateTimeType } from '@/common/utils/db-types';
 import { SYSTEM_USER_ID } from '@/constants/app.constant';
 import { plainToInstance } from 'class-transformer';
 import {
@@ -8,11 +9,10 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { getOrder, Order } from '../decorators/order.decorator';
-import { dateTimeType } from '@/common/utils/db-types';
 
 /**
  * Base class for all domain entities.
- * Provdes standard audit fields (timestamps, creators) and utility methods for 
+ * Provdes standard audit fields (timestamps, creators) and utility methods for
  * DTO conversion and column ordering.
  *
  * @class AbstractEntity

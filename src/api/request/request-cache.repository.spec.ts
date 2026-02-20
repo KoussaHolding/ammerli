@@ -1,6 +1,5 @@
 import { RedisLibsService } from '@/libs/redis/redis-libs.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { plainToInstance } from 'class-transformer';
 import { RequestResDto } from './dto/request.res.dto';
 import { RequestCacheRepository } from './request-cache.repository';
 
@@ -41,9 +40,9 @@ describe('RequestCacheRepository', () => {
     it('should return null if parsing fails', async () => {
       redisLibsService.get.mockResolvedValue('invalid-json');
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       const result = await repository.get('req-1');
-      
+
       expect(result).toBeNull();
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
@@ -72,28 +71,30 @@ describe('RequestCacheRepository', () => {
       expect(redisLibsService.set).toHaveBeenCalledWith(
         expect.stringContaining('req-1'),
         JSON.stringify(request),
-        100
+        100,
       );
     });
-    
-    it('should use default TTL if not provided', async () => {
-        const request = new RequestResDto();
-        request.id = 'req-1' as any;
-        
-        await repository.set(request);
 
-        expect(redisLibsService.set).toHaveBeenCalledWith(
-            expect.any(String),
-            expect.any(String),
-            300
-        );
+    it('should use default TTL if not provided', async () => {
+      const request = new RequestResDto();
+      request.id = 'req-1' as any;
+
+      await repository.set(request);
+
+      expect(redisLibsService.set).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        300,
+      );
     });
   });
 
   describe('delete', () => {
-      it('should delete key from redis', async () => {
-          await repository.delete('req-1');
-          expect(redisLibsService.del).toHaveBeenCalledWith(expect.stringContaining('req-1'));
-      });
+    it('should delete key from redis', async () => {
+      await repository.delete('req-1');
+      expect(redisLibsService.del).toHaveBeenCalledWith(
+        expect.stringContaining('req-1'),
+      );
+    });
   });
 });

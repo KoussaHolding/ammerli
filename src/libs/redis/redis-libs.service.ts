@@ -37,11 +37,7 @@ export class RedisLibsService {
    * @param value - String value to store.
    * @param ttlSeconds - Optional time-to-live in seconds (uses EX).
    */
-  async set(
-    key: string,
-    value: string,
-    ttlSeconds?: number,
-  ): Promise<void> {
+  async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
     if (ttlSeconds != null) {
       await this.client.set(key, value, 'EX', ttlSeconds);
     } else {
@@ -143,11 +139,11 @@ export class RedisLibsService {
 
   /**
    * Gets values for specific fields from a hash.
-   * 
+   *
    * @param key - Redis key.
    * @param fields - Fields to retrieve.
    */
   async hmget(key: string, ...fields: string[]): Promise<(string | null)[]> {
-      return this.client.hmget(key, ...fields);
+    return this.client.hmget(key, ...fields);
   }
 }

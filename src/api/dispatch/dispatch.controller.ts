@@ -1,13 +1,11 @@
-import { Body, Controller, Post, UseGuards, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { DispatchService } from './dispatch.service';
-import { CurrentUser } from '@/decorators/current-user.decorator';
-import { ApiAuth } from '@/decorators/http.decorators';
-import { UserEntity } from '@/api/user/entities/user.entity'; // Or DriverEntity context?
-import { ApiBearerAuth } from '@nestjs/swagger';
-import { Roles } from '@/decorators/roles.decorator';
 import { UserRoleEnum } from '@/api/user/enums/user-role.enum';
 import { Uuid } from '@/common/types/common.type';
+import { CurrentUser } from '@/decorators/current-user.decorator';
+import { ApiAuth } from '@/decorators/http.decorators';
+import { Roles } from '@/decorators/roles.decorator';
+import { Body, Controller, HttpStatus, Post } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { DispatchService } from './dispatch.service';
 
 import { IsNotEmpty, IsUUID } from 'class-validator';
 
@@ -16,9 +14,6 @@ class AcceptRequestDto {
   @IsUUID()
   requestId: Uuid;
 }
-
-import { AuthGuard } from '@/guards/auth.guard';
-import { RolesGuard } from '@/guards/roles.guard';
 
 /**
  * Controller for managing driver-side dispatch actions.

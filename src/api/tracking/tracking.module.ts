@@ -16,11 +16,7 @@ import { DriverModule } from '../driver/driver.module';
     ConfigModule,
     JwtModule.register({}),
   ],
-  providers: [
-    DriverMetadataCacheRepository,
-    TrackingService,
-    TrackingGateway,
-  ],
+  providers: [DriverMetadataCacheRepository, TrackingService, TrackingGateway],
   exports: [TrackingGateway, TrackingService],
 })
 export class TrackingModule {}

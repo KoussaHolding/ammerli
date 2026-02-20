@@ -23,7 +23,7 @@ import { EntityNotFoundError, QueryFailedError } from 'typeorm';
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private i18n: I18nContext<I18nTranslations>;
-  private debug: boolean = false;
+  private debug = false;
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
   constructor(private readonly configService: ConfigService<AllConfigType>) {}
@@ -102,14 +102,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     };
     const statusCode = exception.getStatus();
 
-    const errorRes = {
+    const translatedMessage = this.i18n.t(r.errorCode as any) as any;
+
+    const errorRes: ErrorDto = {
       timestamp: new Date().toISOString(),
       statusCode,
       error: STATUS_CODES[statusCode],
       errorCode: r.errorCode,
       message:
-        r.message ||
-        this.i18n.t(r.errorCode as unknown as keyof I18nTranslations),
+        typeof translatedMessage === 'string' ? translatedMessage : r.message,
     };
 
     this.logger.debug(exception);
@@ -217,7 +218,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   ): ErrorDetailDto[] {
     const extractErrors = (
       error: ValidationError,
-      parentProperty: string = '',
+      parentProperty = '',
     ): ErrorDetailDto[] => {
       const propertyPath = parentProperty
         ? `${parentProperty}.${error.property}`
