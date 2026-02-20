@@ -72,7 +72,7 @@ function generateModulesSet() {
     resolvers: [
       { use: QueryResolver, options: ['lang'] },
       AcceptLanguageResolver,
-      new HeaderResolver(['x-lang']),
+      new HeaderResolver(['x-lang', 'Accept-Language']),
     ],
     useFactory: (configService: ConfigService<AllConfigType>) => {
       const env = configService.get('app.nodeEnv', { infer: true });
