@@ -9,6 +9,8 @@ import { RequestService } from './request.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RequestEntity } from './entities/request.entity';
 import { OrderModule } from '../order/order.module';
+import { RequestDispatchedConsumer } from './consumers/request-dispatched.consumer';
+import { TrackingModule } from '../tracking/tracking.module';
 
 @Module({
   imports: [
@@ -16,9 +18,10 @@ import { OrderModule } from '../order/order.module';
     RabbitMqLibModule,
     TypeOrmModule.forFeature([RequestEntity]),
     OrderModule,
+    TrackingModule,
   ],
   controllers: [RequestController],
-  providers: [RequestService, RequestCacheRepository],
+  providers: [RequestService, RequestCacheRepository, RequestDispatchedConsumer],
   exports: [RequestService],
 })
 export class RequestModule {}

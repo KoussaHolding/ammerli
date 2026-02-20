@@ -4,7 +4,7 @@ import { AllConfigType } from '@/config/config.type';
 import { Uuid } from '@/common/types/common.type';
 import { SYSTEM_USER_ID } from '@/constants/app.constant';
 import { CacheKey } from '@/constants/cache.constant';
-import { ErrorCode } from '@/constants/error-code.constant';
+import { ErrorCode, ErrorMessageConstants } from '@/constants/error-code.constant';
 import { QueueName } from '@/constants/job.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
 import { createCacheKey } from '@/utils/cache.util';
@@ -44,6 +44,12 @@ type Token = Branded<
   'token'
 >;
 
+/**
+ * Core service for handling authentication and session management.
+ * Manages user registration, login, logout, token rotation (JWT), and session blacklisting.
+ *
+ * @class AuthService
+ */
 @Injectable()
 export class AuthService {
   constructor(
@@ -60,15 +66,20 @@ export class AuthService {
   ) {}
 
   /**
-   * Sign in user
-   * @param dto LoginReqDto
-   * @returns LoginResDto
+   * authenticates a user by phone and password.
+   * Generates a new session and returns access/refresh tokens.
+   *
+   * @param dto - Login credentials
+   * @returns Successful login payload including tokens and user info
+   * @throws {UnauthorizedException} If credentials are invalid
+   *
+   * @example
+   * const loginData = await authService.signIn({ phone: '+123', password: '...' });
    */
   async signIn(dto: LoginReqDto): Promise<LoginResDto> {
     const { phone, password } = dto;
     const user = await this.userRepository.findOne({
       where: { phone },
-      select: ['id', 'phone', 'password'],
     });
 
     const isPasswordValid =
@@ -99,10 +110,23 @@ export class AuthService {
 
     return plainToInstance(LoginResDto, {
       userId: user.id,
+      user,
       ...token,
     });
   }
 
+  /**
+   * Registers a new user and creates their specific profile (Client or Driver).
+   * Validates role-specific requirements and ensures phone uniqueness.
+   *
+   * @param dto - Registration details (identity, role, password)
+   * @param manager - Optional EntityManager for transactional consistency
+   * @returns Detailed registration response
+   * @throws {ValidationException} If phone exists or role data is invalid
+   *
+   * @example
+   * await authService.register({ phone: '...', role: UserRoleEnum.CLIENT, ... });
+   */
   async register(
     dto: RegisterReqDto,
     manager?: EntityManager,
@@ -111,24 +135,21 @@ export class AuthService {
       ? manager.getRepository(UserEntity)
       : UserEntity.getRepository();
 
-    // Validate driverType for CLIENT role
     if (dto.role === UserRoleEnum.CLIENT && dto.driverType) {
       throw new ValidationException(
-        ErrorCode.V000,
-        'Driver type should not be provided for Client role',
+        ErrorMessageConstants.VALIDATION.COMMON.CODE,
+        ErrorMessageConstants.AUTH.INVALID_ROLE_DATA.DEBUG,
       );
     }
 
-    // Check if the user already exists
     const isExistUser = await userRepo.exists({
       where: { phone: dto.phone },
     });
 
     if (isExistUser) {
-      throw new ValidationException(ErrorCode.E001);
+      throw new ValidationException(ErrorMessageConstants.USER.PHONE_EXISTS.CODE);
     }
 
-    // Register user
     const user = userRepo.create({
       phone: dto.phone,
       firstName: dto.firstName,
@@ -144,7 +165,6 @@ export class AuthService {
     if (dto.role === UserRoleEnum.CLIENT) {
       await this.clientService.createProfile(user);
     } else if (dto.role === UserRoleEnum.DRIVER) {
-      // Driver type is already validated by DTO
       await this.driverService.createProfile(user, dto.driverType!);
     }
 
@@ -154,6 +174,15 @@ export class AuthService {
     });
   }
 
+  /**
+   * Invalidates a user session by blacklisting the current token.
+   * Session blacklisting persists in Cache (Redis) until token expiry.
+   *
+   * @param userToken - Decoded JWT payload from the current request
+   *
+   * @example
+   * await authService.logout(decodedToken);
+   */
   async logout(userToken: JwtPayloadType): Promise<void> {
     await this.cacheManager.set<boolean>(
       createCacheKey(CacheKey.SESSION_BLACKLIST, userToken.sessionId),
@@ -163,6 +192,14 @@ export class AuthService {
     await SessionEntity.delete(userToken.sessionId);
   }
 
+  /**
+   * Rotates access and refresh tokens using a valid refresh token.
+   * Validates session hash to prevent reuse of compromised refresh tokens.
+   *
+   * @param dto - Request containing valid refresh token
+   * @returns New set of tokens
+   * @throws {UnauthorizedException} If token is expired or session is invalid
+   */
   async refreshToken(dto: RefreshReqDto): Promise<RefreshResDto> {
     const { sessionId, hash } = this.verifyRefreshToken(dto.refreshToken);
     const session = await SessionEntity.findOneBy({ id: sessionId });
@@ -190,6 +227,13 @@ export class AuthService {
     });
   }
 
+  /**
+   * Validates an access token and checks if the session has been blacklisted.
+   *
+   * @param token - Bearer access token string
+   * @returns Decoded payload if valid
+   * @throws {UnauthorizedException} If token is invalid or session is blacklisted
+   */
   async verifyAccessToken(token: string): Promise<JwtPayloadType> {
     let payload: JwtPayloadType;
     try {
@@ -200,7 +244,6 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    // Force logout if the session is in the blacklist
     const isSessionBlacklisted = await this.cacheManager.get<boolean>(
       createCacheKey(CacheKey.SESSION_BLACKLIST, payload.sessionId),
     );
@@ -212,6 +255,10 @@ export class AuthService {
     return payload;
   }
 
+  /**
+   * Internal helper to verify refresh token integrity.
+   * @private
+   */
   private verifyRefreshToken(token: string): JwtRefreshPayloadType {
     try {
       return this.jwtService.verify(token, {
@@ -224,6 +271,10 @@ export class AuthService {
     }
   }
 
+  /**
+   * Creates a dedicated token for email/account verification.
+   * @private
+   */
   private async createVerificationToken(data: { id: string }): Promise<string> {
     return await this.jwtService.signAsync(
       {
@@ -242,6 +293,14 @@ export class AuthService {
     );
   }
 
+  /**
+   * Generates a pair of access and refresh tokens for a user session.
+   * Claims include user ID, Role, and Session ID for authorization.
+   *
+   * @param data - Session metadata needed for token signing
+   * @returns Branded token payload
+   * @private
+   */
   private async createToken(data: {
     id: string;
     sessionId: string;

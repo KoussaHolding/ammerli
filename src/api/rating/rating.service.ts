@@ -5,7 +5,7 @@ import { RatingEntity } from './entities/rating.entity';
 import { CreateRatingDto } from './dto/create-rating.dto';
 import { RequestEntity } from '@/api/request/entities/request.entity';
 import { DriverMetadataService } from '@/api/driver/driver-metadata.service';
-import { AppLogger } from '@/logger/logger.service';
+import { AppLogger } from 'src/logger/logger.service';
 import { Uuid } from '@/common/types/common.type';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RequestStatusEnum } from '@/api/request/enums/request-status.enum';

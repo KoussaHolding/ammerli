@@ -11,6 +11,13 @@ import { RegisterReqDto } from './dto/register.req.dto';
 import { RegisterResDto } from './dto/register.res.dto';
 import { JwtPayloadType } from './types/jwt-payload.type';
 
+/**
+ * Controller manages authentication flows including login, registration, and token management.
+ * Provides public endpoints for identity assertion and secure endpoints for session termination.
+ *
+ * @version 1
+ * @tag auth
+ */
 @ApiTags('auth')
 @Controller({
   path: 'auth',
@@ -19,6 +26,12 @@ import { JwtPayloadType } from './types/jwt-payload.type';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /**
+   * authenticates a user via phone number and password.
+   *
+   * @param userLogin - Login credentials (phone, password)
+   * @returns JWT access and refresh tokens upon successful authentication
+   */
   @ApiPublic({
     type: LoginResDto,
     summary: 'Sign in',
@@ -28,6 +41,13 @@ export class AuthController {
     return await this.authService.signIn(userLogin);
   }
 
+  /**
+   * Registers a new user account (Client or Driver).
+   * Automatically creates the associated profile based on the selected role.
+   *
+   * @param dto - Registration data including role-specific driver details
+   * @returns Detailed registration confirmation
+   */
   @ApiPublic()
   @Post('phone/register')
   @ApiBody({
@@ -60,6 +80,12 @@ export class AuthController {
     return await this.authService.register(dto);
   }
 
+  /**
+   * Terminates the current user session and blacklists the token.
+   *
+   * @param userToken - Current validated JWT payload
+   * @returns Empty response on success
+   */
   @ApiAuth({
     summary: 'Logout',
     errorResponses: [400, 401, 403, 500],
@@ -69,6 +95,13 @@ export class AuthController {
     await this.authService.logout(userToken);
   }
 
+  /**
+   * Generates new access and refresh tokens.
+   * Prevents token reuse through session hash rotation.
+   *
+   * @param dto - Valid refresh token
+   * @returns Rotated token pair
+   */
   @ApiPublic({
     type: RefreshResDto,
     summary: 'Refresh token',
@@ -78,30 +111,50 @@ export class AuthController {
     return await this.authService.refreshToken(dto);
   }
 
+  /**
+   * Initiates the password recovery flow.
+   * @todo Implement forgot-password email dispatch
+   */
   @ApiPublic()
   @Post('forgot-password')
   async forgotPassword() {
     return 'forgot-password';
   }
 
+  /**
+   * Verifies the password reset token from email.
+   * @todo Implement reset token verification
+   */
   @ApiPublic()
   @Post('verify/forgot-password')
   async verifyForgotPassword() {
     return 'verify-forgot-password';
   }
 
+  /**
+   * Updates the password using a verified reset token.
+   * @todo Implement password reset logic
+   */
   @ApiPublic()
   @Post('reset-password')
   async resetPassword() {
     return 'reset-password';
   }
 
+  /**
+   * Verifies the user's email address via token link.
+   * @todo Implement email verification logic
+   */
   @ApiPublic()
-  @Get('verify/email')
+  @Post('verify/email')
   async verifyEmail() {
     return 'verify-email';
   }
 
+  /**
+   * Resends the verification email to the user.
+   * @todo Implement resend logic
+   */
   @ApiPublic()
   @Post('verify/email/resend')
   async resendVerifyEmail() {

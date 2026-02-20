@@ -14,6 +14,7 @@ export const authService = {
     const response = await api.post('/auth/phone/login', { phone, password });
     return response.data;
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   register: async (data: any) => {
     const response = await api.post('/auth/phone/register', data);
     return response.data;

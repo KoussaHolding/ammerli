@@ -1,4 +1,4 @@
-import { ErrorCode } from '@/constants/error-code.constant';
+import { ErrorCode, ErrorMessageConstants } from '@/constants/error-code.constant';
 import { LogConstants } from '@/constants/log.constant';
 import { AppException } from '@/exceptions/app.exception';
 import Redlock from 'redlock';
@@ -23,7 +23,7 @@ export function UseDistributedLock(options: RedlockOptions) {
       const redlock: Redlock = (this as any).redlock;
 
       if (!redlock) {
-        throw new AppException(ErrorCode.S003, 500);
+        throw new AppException(ErrorMessageConstants.SYSTEM.REDLOCK_CLIENT_NOT_FOUND.CODE, 500);
       }
 
       // Parse dynamic keys (e.g., "driver:{0}")

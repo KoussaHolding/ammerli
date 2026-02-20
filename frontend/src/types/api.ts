@@ -34,8 +34,8 @@ export enum RequestStatus {
 }
 
 export enum RequestType {
-  IMMEDIATE = 'IMMEDIATE',
-  SCHEDULED = 'SCHEDULED',
+  BYLITER = 'BYLITER',
+  BYTRUCK = 'BYTRUCK',
 }
 
 export interface Request {

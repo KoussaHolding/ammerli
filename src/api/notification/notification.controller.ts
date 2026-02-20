@@ -21,7 +21,10 @@ class RegisterTokenDto {
 // Checking imports usually requires context, but assuming standard boilerplate pattern.
 
 @ApiTags('Notification')
-@Controller('notifications')
+@Controller({
+  path: 'notifications',
+  version: '1',
+})
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 

@@ -4,14 +4,20 @@ import { RequestStatusEnum } from '@/api/request/enums/request-status.enum';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
 
+import { RabbitMqExchange, RabbitMqRoutingKey } from '@/libs/rabbitMq/domain-events';
+
 @Injectable()
 export class RequestCreatedConsumer {
   constructor(private readonly dispatchService: DispatchService) {}
 
   @RabbitSubscribe({
-    exchange: 'requests',
-    routingKey: 'request.created',
-    queue: 'process-request-queue',
+    exchange: RabbitMqExchange.REQUESTS,
+    routingKey: RabbitMqRoutingKey.REQUEST_CREATED,
+    queue: 'process_request_queue',
+    queueOptions: {
+      deadLetterExchange: RabbitMqExchange.DLQ,
+      deadLetterRoutingKey: 'dead.letter',
+    },
   })
   async handleDispatch(message: RequestResDto) {
     await this.dispatchService.dispatchRequest({

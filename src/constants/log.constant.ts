@@ -60,4 +60,16 @@ export const LogConstants = {
     DB_QUERY_SLOW: 'query is slow',
     DB_QUERY_TIME: 'execution time',
   },
+
+  // === TRACKING DOMAIN ===
+  TRACKING: {
+    DRIVER_CONNECTED: 'Driver connected',
+    USER_CONNECTED: 'User connected',
+    DRIVER_DISCONNECTED: 'Driver disconnected',
+    USER_DISCONNECTED: 'User disconnected',
+    CONNECTION_REJECTED: 'Connection rejected: No driverId or valid token',
+    INVALID_TOKEN: 'Invalid token for connection',
+    PROCESSING_EVENT: 'Processing event for request',
+    EMITTED_EVENT: 'Emitted event to user',
+  },
 } as const;

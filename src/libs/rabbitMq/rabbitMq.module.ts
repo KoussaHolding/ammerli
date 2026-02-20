@@ -1,5 +1,7 @@
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { Global, Module } from '@nestjs/common';
+import { DlqService } from './dlq.service';
+import { RabbitMqExchange } from './domain-events';
 
 @Global()
 @Module({
@@ -7,11 +9,19 @@ import { Global, Module } from '@nestjs/common';
     RabbitMQModule.forRoot({
       exchanges: [
         {
-          name: 'requests',
+          name: RabbitMqExchange.REQUESTS,
           type: 'topic',
         },
         {
-          name: 'alerts',
+          name: RabbitMqExchange.TRACKING,
+          type: 'topic',
+        },
+        {
+          name: RabbitMqExchange.NOTIFICATIONS,
+          type: 'topic',
+        },
+        {
+          name: RabbitMqExchange.DLQ,
           type: 'topic',
         },
       ],
@@ -30,7 +40,7 @@ import { Global, Module } from '@nestjs/common';
       },
     }),
   ],
-  providers: [],
-  exports: [RabbitMQModule],
+  providers: [DlqService],
+  exports: [RabbitMQModule, DlqService],
 })
 export class RabbitMqLibModule {}

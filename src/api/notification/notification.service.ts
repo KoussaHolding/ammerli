@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as admin from 'firebase-admin';
 import { DeviceTokenEntity } from './entities/device-token.entity';
-import { AppLogger } from '@/logger/logger.service';
+import { AppLogger } from 'src/logger/logger.service';
 
 @Injectable()
 export class NotificationService implements OnModuleInit {

@@ -10,6 +10,7 @@ import { UserEntity } from '@/api/user/entities/user.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import { DriverTypeEnum } from '../enums/driver-type.enum';
+import { dbEnumType } from '@/common/utils/db-types';
 
 @Entity('drivers')
 export class DriverEntity extends AbstractEntity {
@@ -26,9 +27,9 @@ export class DriverEntity extends AbstractEntity {
   user!: UserEntity;
 
   @Column({
-    type: 'enum',
+    type: dbEnumType,
     enum: DriverTypeEnum,
-    default: DriverTypeEnum.RETAIL,
+    default: DriverTypeEnum.MOTORCYCLE,
   })
   type: DriverTypeEnum;
 

@@ -4,10 +4,25 @@ import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
 import { AllConfigType } from '../config/config.type';
 
+/**
+ * Factory service that generates TypeORM configuration for the application.
+ * Integrates with NestJS ConfigService to resolve environment variables into a
+ * structured TypeOrmModuleOptions object.
+ *
+ * @class TypeOrmConfigService
+ * @implements TypeOrmOptionsFactory
+ */
 @Injectable()
 export class TypeOrmConfigService implements TypeOrmOptionsFactory {
   constructor(private configService: ConfigService<AllConfigType>) {}
 
+  /**
+   * Constructs the TypeORM configuration object.
+   * Configures database connection pooling, entitiy discovery, migrations, 
+   * and SSL/TLS security settings based on environment-specific requirements.
+   *
+   * @returns Fully initialized TypeORM options
+   */
   createTypeOrmOptions(): TypeOrmModuleOptions {
     return {
       type: this.configService.get('database.type', { infer: true }),

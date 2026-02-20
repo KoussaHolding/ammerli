@@ -15,6 +15,10 @@ import process from 'node:process';
 import validateConfig from '../utils/validate-config';
 import { AppConfig } from './app-config.type';
 
+/**
+ * Validation schema for application-level environment variables.
+ * Ensures critical settings like PORT and COR_ORIGIN are correctly typed.
+ */
 class EnvironmentVariablesValidator {
   @IsEnum(Environment)
   @IsOptional()
@@ -69,8 +73,11 @@ class EnvironmentVariablesValidator {
   APP_CORS_ORIGIN: string;
 }
 
+/**
+ * App Configuration Factory.
+ * Resolves and validates core application settings.
+ */
 export default registerAs<AppConfig>('app', () => {
-  console.info(`Register AppConfig from environment variables`);
   validateConfig(process.env, EnvironmentVariablesValidator);
 
   const port = process.env.APP_PORT
@@ -93,6 +100,12 @@ export default registerAs<AppConfig>('app', () => {
   };
 });
 
+/**
+ * Helper to parse and normalize the APP_CORS_ORIGIN environment variable.
+ * Supports boolean strings, wildcards, and comma-separated lists.
+ *
+ * @returns boolean | string | string[]
+ */
 function getCorsOrigin() {
   const corsOrigin = process.env.APP_CORS_ORIGIN;
   if (corsOrigin === 'true') return true;

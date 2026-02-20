@@ -24,11 +24,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/auth/phone/login",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/auth/phone/login",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"auth",
 								"phone",
 								"login"
@@ -77,11 +79,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/auth/phone/register",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/auth/phone/register",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"auth",
 								"phone",
 								"register"
@@ -131,11 +135,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/auth/logout",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/auth/logout",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"auth",
 								"logout"
 							]
@@ -174,11 +180,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/auth/refresh",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/auth/refresh",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"auth",
 								"refresh"
 							]
@@ -192,11 +200,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/auth/forgot-password",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/auth/forgot-password",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"auth",
 								"forgot-password"
 							]
@@ -210,11 +220,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/auth/verify/forgot-password",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/auth/verify/forgot-password",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"auth",
 								"verify",
 								"forgot-password"
@@ -229,11 +241,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/auth/reset-password",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/auth/reset-password",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"auth",
 								"reset-password"
 							]
@@ -247,11 +261,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/auth/verify/email",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/auth/verify/email",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"auth",
 								"verify",
 								"email"
@@ -266,11 +282,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/auth/verify/email/resend",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/auth/verify/email/resend",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"auth",
 								"verify",
 								"email",
@@ -301,11 +319,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/Clients",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/Clients",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"Clients"
 							]
 						}
@@ -345,11 +365,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/Clients/load-more",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/Clients/load-more",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"Clients",
 								"load-more"
 							]
@@ -390,11 +412,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/Clients/:id",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/Clients/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"Clients",
 								":id"
 							],
@@ -467,11 +491,13 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/Clients/:id",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/Clients/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"Clients",
 								":id"
 							],
@@ -507,7 +533,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"requestId\": \"uuid\"\n}",
+							"raw": "{\n    \"requestId\": \"{{requestId}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -515,11 +541,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/dispatch/accept",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/dispatch/accept",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"dispatch",
 								"accept"
 							]
@@ -565,11 +593,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/drivers",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/drivers",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"drivers"
 							]
 						}
@@ -592,11 +622,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/drivers/load-more",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/drivers/load-more",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"drivers",
 								"load-more"
 							]
@@ -620,11 +652,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/drivers/:id",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/drivers/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"drivers",
 								":id"
 							],
@@ -697,11 +731,13 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/drivers/:id",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/drivers/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"drivers",
 								":id"
 							],
@@ -726,12 +762,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:3000/health",
-							"protocol": "http",
+							"raw": "{{baseUrl}}/health",
 							"host": [
-								"localhost"
+								"{{baseUrl}}"
 							],
-							"port": "3000",
 							"path": [
 								"health"
 							]
@@ -768,12 +802,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:3000/",
-							"protocol": "http",
+							"raw": "{{baseUrl}}/",
 							"host": [
-								"localhost"
+								"{{baseUrl}}"
 							],
-							"port": "3000",
 							"path": [
 								""
 							]
@@ -828,11 +860,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/notifications/device-token",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/notifications/device-token",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"notifications",
 								"device-token"
 							]
@@ -870,11 +904,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/products",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/products",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"products"
 							]
 						}
@@ -904,11 +940,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/products",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/products",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"products"
 							]
 						}
@@ -921,11 +959,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/products/:id",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/products/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"products",
 								":id"
 							],
@@ -998,11 +1038,13 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/products/:id",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/products/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"products",
 								":id"
 							],
@@ -1046,11 +1088,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/ratings",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/ratings",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"ratings"
 							]
 						}
@@ -1080,11 +1124,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/ratings/driver/:driverId",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/ratings/driver/:driverId",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"ratings",
 								"driver",
 								":driverId"
@@ -1129,11 +1175,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/requests",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/requests",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"requests"
 							]
 						}
@@ -1149,12 +1197,121 @@
 									"",
 									"pm.test(\"Response time is less than 1000ms\", function () {",
 									"    pm.expect(pm.response.responseTime).to.be.below(1000);",
-									"});"
+									"});",
+                                    "",
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.id) {",
+                                    "    pm.collectionVariables.set(\"requestId\", jsonData.id);",
+                                    "}"
 								],
 								"type": "text/javascript"
 							}
 						}
 					],
+					"response": []
+				},
+				{
+					"name": "Get Active Request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/requests/active",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
+								"requests",
+								"active"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Driver Arrived",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/requests/:id/arrived",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
+								"requests",
+								":id",
+								"arrived"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{requestId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start Ride",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/requests/:id/start",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
+								"requests",
+								":id",
+								"start"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{requestId}}"
+								}
+							]
+						}
+					},
 					"response": []
 				},
 				{
@@ -1173,11 +1330,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/requests/:id/complete",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/requests/:id/complete",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"requests",
 								":id",
 								"complete"
@@ -1208,11 +1367,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/requests/:id/cancel",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/requests/:id/cancel",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"requests",
 								":id",
 								"cancel"
@@ -1248,11 +1409,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/users/me",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/users/me",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"users",
 								"me"
 							]
@@ -1299,11 +1462,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/users",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/users",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"users"
 							]
 						}
@@ -1326,11 +1491,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/users/load-more",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/users/load-more",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"users",
 								"load-more"
 							]
@@ -1354,11 +1521,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/users/:id",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/users/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"users",
 								":id"
 							],
@@ -1397,11 +1566,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/users/:id",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/users/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"users",
 								":id"
 							],
@@ -1440,11 +1611,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/users/me/change-password",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/users/me/change-password",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"users",
 								"me",
 								"change-password"
@@ -1469,11 +1642,13 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/users/:id",
+							"raw": "{{baseUrl}}/{{apiPrefix}}/{{apiVersion}}/users/:id",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
+								"{{apiPrefix}}",
+								"{{apiVersion}}",
 								"users",
 								":id"
 							],
@@ -1493,7 +1668,17 @@
 	"variable": [
 		{
 			"key": "baseUrl",
-			"value": "http://localhost:3000/api/v1",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "apiPrefix",
+			"value": "api",
+			"type": "string"
+		},
+		{
+			"key": "apiVersion",
+			"value": "v1",
 			"type": "string"
 		},
 		{
@@ -1505,6 +1690,11 @@
 			"key": "refreshToken",
 			"value": "",
 			"type": "string"
-		}
+		},
+        {
+            "key": "requestId",
+            "value": "",
+            "type": "string"
+        }
 	]
 }

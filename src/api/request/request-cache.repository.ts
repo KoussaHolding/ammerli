@@ -63,4 +63,46 @@ export class RequestCacheRepository {
   async delete(requestId: string): Promise<void> {
     await this.redisLibsService.del(this.getKey(requestId));
   }
+
+  /**
+   * Links a user to their currently active request in the cache.
+   *
+   * @param userId - Target user identifier
+   * @param requestId - Request identifier to link
+   * @param ttlSeconds - Cache duration (default: 300)
+   */
+  async setUserActiveRequest(
+    userId: string,
+    requestId: string,
+    ttlSeconds = 300,
+  ): Promise<void> {
+    await this.redisLibsService.set(
+      `${RedisConstants.KEYS.REQUESTS_INDEX}:user:${userId}`,
+      requestId,
+      ttlSeconds,
+    );
+  }
+
+  /**
+   * Retrieves the identifier of a user's current live request.
+   *
+   * @param userId - Target user identifier
+   * @returns Request identifier if found, otherwise null
+   */
+  async getUserActiveRequest(userId: string): Promise<string | null> {
+    return await this.redisLibsService.get(
+      `${RedisConstants.KEYS.REQUESTS_INDEX}:user:${userId}`,
+    );
+  }
+
+  /**
+   * Clears the active request link for a user.
+   *
+   * @param userId - Target user identifier
+   */
+  async removeUserActiveRequest(userId: string): Promise<void> {
+    await this.redisLibsService.del(
+      `${RedisConstants.KEYS.REQUESTS_INDEX}:user:${userId}`,
+    );
+  }
 }

@@ -9,16 +9,20 @@ import { OrderModule } from '../order/order.module';
 import { MatchingService } from './matching.service';
 import { DriverEntity } from '../driver/entities/driver.entity';
 
+import { RequestCreatedConsumer } from './consumers/request-created.consumer';
+import { AuthModule } from '../auth/auth.module';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([DriverEntity]),
     RabbitMqLibModule,
+    AuthModule,
     RequestModule,
     DriverModule,
     OrderModule
   ],
   controllers: [DispatchController],
-  providers: [DispatchService, MatchingService],
+  providers: [DispatchService, MatchingService, RequestCreatedConsumer],
   exports: [DispatchService],
 })
 export class DispatchModule {}

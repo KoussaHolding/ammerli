@@ -1,6 +1,7 @@
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { Uuid } from '@/common/types/common.type';
+import { dbEnumType } from '@/common/utils/db-types';
 
 export enum OrderStatusEnum {
   CREATED = 'CREATED',
@@ -24,7 +25,7 @@ export class OrderEntity extends AbstractEntity {
   driverId: Uuid;
 
   @Column({
-    type: 'enum',
+    type: dbEnumType,
     enum: OrderStatusEnum,
     default: OrderStatusEnum.CREATED,
   })

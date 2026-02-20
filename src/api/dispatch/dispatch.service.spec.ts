@@ -1,4 +1,4 @@
-import { ErrorCode } from '@/constants/error-code.constant';
+import { ErrorCode, ErrorMessageConstants } from '@/constants/error-code.constant';
 import { LogConstants } from '@/constants/log.constant';
 import { RedisConstants } from '@/constants/redis.constants';
 import { AppException } from '@/exceptions/app.exception';
@@ -6,11 +6,15 @@ import { RedisLibsService } from '@/libs/redis/redis-libs.service';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppLogger } from 'src/logger/logger.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { DriverEntity } from '../driver/entities/driver.entity';
 import { RequestResDto } from '../request/dto/request.res.dto';
 import { RequestStatusEnum } from '../request/enums/request-status.enum';
 import { RequestService } from '../request/request.service';
 import { DispatchService } from './dispatch.service';
 import { MatchingService } from './matching.service';
+import { OrderService } from '../order/order.service';
+import { Uuid } from '@/common/types/common.type';
 
 // Mock UUID to avoid issues
 jest.mock('uuid', () => ({ v4: () => 'test-uuid' }));
@@ -58,6 +62,8 @@ describe('DispatchService', () => {
                 { provide: RequestService, useValue: requestServiceMock },
                 { provide: MatchingService, useValue: matchingServiceMock },
                 { provide: AppLogger, useValue: loggerMock },
+                { provide: getRepositoryToken(DriverEntity), useValue: { findOne: jest.fn() } },
+                { provide: OrderService, useValue: { createOrder: jest.fn() } },
             ],
         }).compile();
 
@@ -104,7 +110,7 @@ describe('DispatchService', () => {
 
             expect(result).toEqual([]);
             expect(logger.warnStructured).toHaveBeenCalledWith(
-                'NO_VALID_CANDIDATES',
+                LogConstants.REQUEST.NO_DRIVERS,
                 expect.anything()
             );
         });

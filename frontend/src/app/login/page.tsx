@@ -8,12 +8,14 @@ import { motion } from 'framer-motion';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
-import { Droplets, Lock, Phone, Loader2 } from 'lucide-react';
+import { Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
+import { normalizePhone } from '@/lib/utils';
+
 const loginSchema = z.object({
-  phone: z.string().min(10, 'Invalid phone number'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  phone: z.string().min(10, 'Enter a valid phone number'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -28,90 +30,96 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  // ... imports
+
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await authService.login(data.phone, data.password);
+      const formattedPhone = normalizePhone(data.phone);
+      const response = await authService.login(formattedPhone, data.password);
       setAuth(response.user, response.accessToken, response.refreshToken);
       
-      // Redirect based on role
       if (response.user.role === 'ADMIN') router.push('/admin');
-      else if (response.user.role === 'DRIVER') router.push('/driver');
+      else if (response.user.role === 'DRIVER') router.push('/driver/dashboard');
       else router.push('/dashboard');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid credentials');
+      if (err.response?.data?.details) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const messages = err.response.data.details.map((d: any) => d.message).join(', ');
+        setError(messages);
+      } else {
+        setError(err.response?.data?.message || 'Invalid phone number or password.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 px-6">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md bg-white p-10 rounded-[2.5rem] shadow-xl border border-zinc-100"
-      >
-        <div className="flex flex-col items-center mb-10">
-          <div className="h-16 w-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
-            <Droplets className="text-white h-8 w-8" />
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      <header className="p-6">
+        <h1 className="text-2xl font-normal tracking-tight">Ammerli</h1>
+      </header>
+      
+      <main className="flex-1 flex flex-col justify-center px-6 max-w-lg mx-auto w-full">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-8"
+        >
+          <div>
+            <h2 className="text-4xl font-medium mb-2">Login</h2>
+            <p className="text-zinc-400">Enter your credentials to continue.</p>
           </div>
-          <h1 className="text-3xl font-black tracking-tighter">Welcome Back</h1>
-          <p className="text-zinc-500 mt-2">Log in to your Ammerli account</p>
-        </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-medium border border-red-100">
-            {error}
-          </div>
-        )}
+          {error && (
+            <div className="p-4 bg-red-900/20 text-red-400 border border-red-900/50 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-bold ml-1">Phone Number</label>
-            <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-2">
               <input
                 {...register('phone')}
-                placeholder="+213 555 555 555"
-                className="w-full pl-12 pr-4 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition outline-none"
+                placeholder="Phone number"
+                className="w-full p-4 bg-zinc-900 border-none rounded-lg text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-white transition outline-none text-lg"
               />
+              {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
             </div>
-            {errors.phone && <p className="text-xs text-red-500 ml-1">{errors.phone.message}</p>}
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between items-center ml-1">
-              <label className="text-sm font-bold">Password</label>
-              <Link href="/forgot" className="text-xs text-blue-600 font-bold">Forgot?</Link>
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
+            <div className="space-y-2">
               <input
                 {...register('password')}
                 type="password"
-                placeholder="••••••••"
-                className="w-full pl-12 pr-4 py-4 bg-zinc-50 border border-zinc-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition outline-none"
+                placeholder="Password"
+                className="w-full p-4 bg-zinc-900 border-none rounded-lg text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-white transition outline-none text-lg"
               />
+              {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
             </div>
-            {errors.password && <p className="text-xs text-red-500 ml-1">{errors.password.message}</p>}
+
+            <button
+              disabled={isLoading}
+              type="submit"
+              className="w-full py-4 bg-white text-black rounded-lg font-medium text-lg hover:bg-zinc-200 transition flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
+            >
+              {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                <>
+                  Next
+                  <ArrowRight className="h-5 w-5" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="flex justify-between items-center text-sm pt-4">
+             <Link href="/register" className="text-zinc-400 hover:text-white transition">Don&apos;t have an account?</Link>
+             <Link href="/forgot" className="text-zinc-400 hover:text-white transition">Forgot Password?</Link>
           </div>
-
-          <button
-            disabled={isLoading}
-            type="submit"
-            className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-lg shadow-blue-100 disabled:opacity-50"
-          >
-            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Log In'}
-          </button>
-        </form>
-
-        <p className="text-center mt-8 text-zinc-500 text-sm">
-          Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-blue-600 font-black">Sign Up</Link>
-        </p>
-      </motion.div>
+        </motion.div>
+      </main>
     </div>
   );
 }

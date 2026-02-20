@@ -1,4 +1,4 @@
-import { ErrorCode } from '@/constants/error-code.constant';
+import { ErrorCode, ErrorMessageConstants } from '@/constants/error-code.constant';
 import { LogConstants } from '@/constants/log.constant';
 import { AppException } from '@/exceptions/app.exception';
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
@@ -38,7 +38,7 @@ export class DistributedLockService {
         this.logger.warn(
           `${LogConstants.SYSTEM.WARN_FAILED_LOCK}: ${resource}`,
         );
-        throw new AppException(ErrorCode.S001, HttpStatus.TOO_MANY_REQUESTS);
+        throw new AppException(ErrorMessageConstants.SYSTEM.LOCK_BUSY.CODE, HttpStatus.TOO_MANY_REQUESTS);
       }
 
       // If the error came from YOUR code (routine), just rethrow it
@@ -65,7 +65,7 @@ export class DistributedLockService {
       this.logger.warn(
         `${LogConstants.SYSTEM.WARN_MANUAL_FAILED_LOCK}: ${resource}`,
       );
-      throw new AppException(ErrorCode.S001, HttpStatus.TOO_MANY_REQUESTS);
+      throw new AppException(ErrorMessageConstants.SYSTEM.LOCK_BUSY.CODE, HttpStatus.TOO_MANY_REQUESTS);
     }
   }
 

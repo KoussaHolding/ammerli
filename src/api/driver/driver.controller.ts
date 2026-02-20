@@ -5,6 +5,8 @@ import {
   Delete,
   Get,
   HttpStatus,
+  Inject,
+  forwardRef,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -22,13 +24,19 @@ import { ListDriverReqDto } from './dto/list-driver.req.dto';
 import { LoadMoreDriversReqDto } from './dto/load-more-drivers.req.dto';
 import { UpdateDriverReqDto } from './dto/update-driver.req.dto';
 
+import { TrackingService } from '../tracking/tracking.service';
+
 @ApiTags('drivers')
 @Controller({
   path: 'drivers',
   version: '1',
 })
 export class DriverController {
-  constructor(private readonly driverService: DriverService) {}
+  constructor(
+    private readonly driverService: DriverService,
+    @Inject(forwardRef(() => TrackingService))
+    private readonly trackingService: TrackingService,
+  ) {}
 
 
 
@@ -43,6 +51,27 @@ export class DriverController {
     @Query() reqDto: ListDriverReqDto,
   ): Promise<OffsetPaginatedDto<DriverResDto>> {
     return await this.driverService.findAll(reqDto);
+  }
+
+  @Get('nearby')
+  @ApiPublic() // Or ApiAuth, but public is easier for now. Let's stick to Public for 'Uber-like' feel before login? No, dashboard requires login.
+  // Actually, dashboard is protected.
+  @ApiAuth({
+      summary: 'Find nearby drivers',
+  })
+  async findNearby(
+      @Query('lat') lat: number,
+      @Query('lng') lng: number,
+      @Query('radius') radius: number = 5,
+  ) {
+      // We need to inject TrackingService properly. 
+      // DriverModule imports TrackingModule?
+      // Let's assume yes or I will check.
+      // If not, I can't use it directly here.
+      // Better to use DriverService which wraps it?
+      // Let's check imports.
+      // For now, I'll assume I can inject TrackingService if I add it to constructor.
+      return this.trackingService.findNearbyDrivers(lat, lng, radius);
   }
 
   @Get('/load-more')

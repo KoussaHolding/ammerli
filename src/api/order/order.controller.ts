@@ -1,4 +1,7 @@
 import { Controller } from '@nestjs/common';
 
-@Controller('order')
+@Controller({
+  path: 'orders',
+  version: '1',
+})
 export class OrderController {}

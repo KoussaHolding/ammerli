@@ -3,15 +3,15 @@
 import { use, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Request, RequestStatus } from '@/types/api';
+import { RequestStatus } from '@/types/api';
 import { Droplets, MapPin, Truck, Phone, CheckCircle2, Navigation, ArrowLeft, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function OrderTrackingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user } = useAuthStore();
-  const router = useRouter();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [order, setOrder] = useState<any>(null);
   const [step, setStep] = useState(1);
 

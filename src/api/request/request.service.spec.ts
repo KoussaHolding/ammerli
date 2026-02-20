@@ -6,6 +6,12 @@ import { CreateRequestDto } from './dto/create-request.dto';
 import { UserResDto } from '../user/dto/user.res.dto';
 import { Uuid } from '@/common/types/common.type';
 import { RequestStatusEnum } from './enums/request-status.enum';
+import { AppLogger } from 'src/logger/logger.service';
+import { LogConstants } from '@/constants/log.constant';
+import { ErrorMessageConstants } from '@/constants/error-code.constant';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { RequestEntity } from './entities/request.entity';
+import { OrderService } from '../order/order.service';
 
 jest.mock('uuid', () => ({
     v4: jest.fn(() => 'test-uuid'),
@@ -15,6 +21,7 @@ describe('RequestService', () => {
     let service: RequestService;
     let amqpConnection: jest.Mocked<AmqpConnection>;
     let cacheRepo: jest.Mocked<RequestCacheRepository>;
+    let logger: jest.Mocked<AppLogger>;
 
     beforeEach(async () => {
         const amqpConnectionMock = {
@@ -24,6 +31,20 @@ describe('RequestService', () => {
             get: jest.fn(),
             set: jest.fn(),
             delete: jest.fn(),
+            setUserActiveRequest: jest.fn(),
+            removeUserActiveRequest: jest.fn(),
+            getUserActiveRequest: jest.fn(),
+        };
+        const loggerMock = {
+            log: jest.fn(),
+            error: jest.fn(),
+            warn: jest.fn(),
+            debug: jest.fn(),
+            setContext: jest.fn(),
+            infoStructured: jest.fn(),
+            warnStructured: jest.fn(),
+            errorStructured: jest.fn(),
+            debugStructured: jest.fn(),
         };
 
         const module: TestingModule = await Test.createTestingModule({
@@ -31,12 +52,16 @@ describe('RequestService', () => {
                 RequestService,
                 { provide: AmqpConnection, useValue: amqpConnectionMock },
                 { provide: RequestCacheRepository, useValue: cacheRepoMock },
+                { provide: AppLogger, useValue: loggerMock },
+                { provide: getRepositoryToken(RequestEntity), useValue: { create: jest.fn(), save: jest.fn(), findOne: jest.fn() } },
+                { provide: OrderService, useValue: { updateStatus: jest.fn() } },
             ],
         }).compile();
 
         service = module.get<RequestService>(RequestService);
         amqpConnection = module.get(AmqpConnection);
         cacheRepo = module.get(RequestCacheRepository);
+        logger = module.get(AppLogger);
     });
 
     it('should be defined', () => {

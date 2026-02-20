@@ -1,4 +1,4 @@
-import { ErrorCode } from '@/constants/error-code.constant';
+import { ErrorCode, ErrorMessageConstants } from '@/constants/error-code.constant';
 import { LogConstants } from '@/constants/log.constant';
 import { RedisConstants } from '@/constants/redis.constants';
 import { Instrument } from '@/decorators/instrument.decorator';
@@ -19,6 +19,13 @@ import { MatchingService } from './matching.service';
 import { OrderService } from '../order/order.service';
 import { Uuid } from '@/common/types/common.type';
 
+/**
+ * Service responsible for orchestrating the dispatch of requests to drivers.
+ * Implements the core business logic for finding nearby candidates, scoring them
+ * via MatchingService, and managing the request acceptance flow.
+ *
+ * @class DispatchService
+ */
 @Injectable()
 export class DispatchService {
   constructor(
@@ -35,15 +42,21 @@ export class DispatchService {
   }
 
   /**
-   * Main entry point: Dispatches a request to nearby drivers.
+   * Main dispatching pipeline.
+   * Finds, scores, and offers a request to the best available driver.
+   *
+   * @param params - The request data to be dispatched
+   * @returns Array of driver identifiers that received the dispatch offer
+   *
+   * @example
+   * const results = await dispatchService.dispatchRequest(activeRequest);
    */
   @Instrument({ performanceThreshold: 200 })
   async dispatchRequest(
     params: RequestResDto,
   ): Promise<DriverLocationResDto[]> {
     const request = await this.requestService.getRequestFromCache(params.id);
-    
-    // 1. Find candidates (radius check only)
+
     const candidates = await this.findNearbyDrivers(request);
 
     if (!candidates.length) {
@@ -53,34 +66,27 @@ export class DispatchService {
       return [];
     }
 
-    // 2. Score & Filter candidates (Fairness Logic)
-    // The matching service handles "filtering" of busy/incompatible drivers internally
-    const scoredCandidates = await this.matchingService.findBestDrivers(request, candidates);
+    const scoredCandidates = await this.matchingService.findBestDrivers(
+      request,
+      candidates,
+    );
 
     if (!scoredCandidates.length) {
-         this.logger.warnStructured('NO_VALID_CANDIDATES', {
-            requestId: request.id,
-            totalFound: candidates.length,
-            reason: 'All filtered out by matching logic'
-         });
-         return [];
+      this.logger.warnStructured(LogConstants.REQUEST.NO_DRIVERS, {
+        requestId: request.id,
+        totalFound: candidates.length,
+        reason: ErrorMessageConstants.REQUEST.NOT_AVAILABLE,
+      });
+      return [];
     }
 
-    // 3. Selection Strategy:
-    // For now, we pick the TOP 1 best driver.
-    // In future, we could batch offer to Top 3.
     const bestMatch = scoredCandidates[0];
-    const active = [{
+    const active = [
+      {
         driverId: bestMatch.driverId,
-        distanceKm: bestMatch.distanceKm
-    }];
-
-    // Note: We are NO LONGER doing the "ghost" check here because MatchingService
-    // verifies metadata existence. If metadata is missing, MatchingService skips them.
-    // However, we might want to clean up stale GEO index entries? 
-    // MatchingService doesn't return "ghosts". 
-    // We can assume if they are in Geo but not in Metadata, they are ghosts.
-    // For simplicity, we skip aggressive cleanup here or move it to a background job.
+        distanceKm: bestMatch.distanceKm,
+      },
+    ];
 
     await this.markRequestDispatched(request);
     await this.emitDispatchEvent(request, active);
@@ -90,7 +96,7 @@ export class DispatchService {
       driverCount: 1,
       driverId: bestMatch.driverId,
       score: bestMatch.score,
-      debug: bestMatch.debug
+      debug: bestMatch.debug,
     });
 
     return active;
@@ -98,6 +104,7 @@ export class DispatchService {
 
   /**
    * Finds nearby driver candidates using Redis geospatial query.
+   * @private
    */
   private async findNearbyDrivers(
     request: RequestResDto,
@@ -107,7 +114,7 @@ export class DispatchService {
         RedisConstants.KEYS.DRIVERS_GEO_INDEX,
         request.pickupLng,
         request.pickupLat,
-        5, // Increased radius to 5km to allow better matching
+        5,
         RedisConstants.CMD.UNIT_KM,
       );
     } catch (error) {
@@ -115,12 +122,17 @@ export class DispatchService {
         requestId: request.id,
         error: error.message,
       });
-      throw new AppException(ErrorCode.S002, 500, error);
+      throw new AppException(
+        ErrorMessageConstants.SYSTEM.REDIS_FAILURE.CODE,
+        500,
+        ErrorMessageConstants.SYSTEM.REDIS_FAILURE.DEBUG,
+      );
     }
   }
 
   /**
-   * Marks the request as dispatched in cache/database.
+   * Marks the request as dispatched in the cache.
+   * @private
    */
   private async markRequestDispatched(request: RequestResDto) {
     request.status = RequestStatusEnum.DISPATCHED;
@@ -131,7 +143,8 @@ export class DispatchService {
   }
 
   /**
-   * Emits the dispatch event.
+   * Publishes the 'request.dispatched' event to RabbitMQ.
+   * @private
    */
   private async emitDispatchEvent(
     request: RequestResDto,
@@ -152,46 +165,68 @@ export class DispatchService {
       });
     }
   }
+  /**
+   * Accepts a dispatch offer on behalf of a driver.
+   * Transitions request to ACCEPTED, assigns driver, and creates the associated Order.
+   *
+   * @param requestId - Request being accepted
+   * @param userId - ID of the User (Driver) who is accepting
+   * @returns Success confirmation
+   * @throws {AppException} If driver or request not found, or request is no longer available
+   */
   async acceptRequest(requestId: Uuid, userId: Uuid) {
-    // 0. Resolve Driver Entity ID from User ID
-    const driver = await this.driverRepo.findOne({ 
-        where: { user: { id: userId } },
-        relations: ['user']
+    const driver = await this.driverRepo.findOne({
+      where: { user: { id: userId } },
+      relations: ['user'],
     });
     if (!driver) {
-        throw new AppException(ErrorCode.S003, 404, 'Driver profile not found');
+      this.logger.error(`${LogConstants.DRIVER.NOT_FOUND}: ${userId}`);
+      throw new AppException(
+        ErrorMessageConstants.DRIVER.NOT_FOUND.CODE,
+        404,
+        ErrorMessageConstants.DRIVER.NOT_FOUND.DEBUG,
+      );
     }
     const driverId = driver.id;
 
     const request = await this.requestService.getRequestFromCache(requestId);
     if (!request) {
-        throw new AppException(ErrorCode.S003, 404, 'Request not found');
+      throw new AppException(
+        ErrorMessageConstants.REQUEST.NOT_FOUND.CODE,
+        404,
+        ErrorMessageConstants.REQUEST.NOT_FOUND.DEBUG,
+      );
     }
 
-    if (request.status !== RequestStatusEnum.DISPATCHED && request.status !== RequestStatusEnum.SEARCHING) {
-        // Allow SEARCHING for testing or direct assign scenarios
-        throw new AppException(ErrorCode.S003, 400, 'Request is not available for acceptance');
+    if (
+      request.status !== RequestStatusEnum.DISPATCHED &&
+      request.status !== RequestStatusEnum.SEARCHING
+    ) {
+      throw new AppException(
+        ErrorMessageConstants.REQUEST.NOT_AVAILABLE.CODE,
+        400,
+        ErrorMessageConstants.REQUEST.NOT_AVAILABLE.DEBUG,
+      );
     }
 
-    // Update status in Redis
     request.status = RequestStatusEnum.ACCEPTED;
     request.driverId = driverId;
-    
+
     await this.requestService.updateRequest(requestId, request);
 
-    // Create Order in DB
-    // request.user.id currently might be string, cast to Uuid if needed
-    await this.orderService.createOrder(requestId, driverId, request.user.id as Uuid);
+    await this.orderService.createOrder(
+      requestId,
+      driverId,
+      request.user.id as Uuid,
+    );
 
-    // Emit Event
     await this.amqpConnection.publish('requests', 'request.accepted', request);
 
     this.logger.infoStructured(LogConstants.REQUEST.ACCEPTED, {
-        requestId,
-        driverId
+      requestId,
+      driverId,
     });
 
     return { success: true };
   }
 }
-

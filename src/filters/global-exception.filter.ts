@@ -89,9 +89,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   }
 
   /**
-   * Handles validation errors
-   * @param exception ValidationException
-   * @returns ErrorDto
+   * Handles custom ValidationExceptions thrown by the business logic.
+   * Extracts the domain-specific error code and optionally translates the message.
+   *
+   * @param exception - The ValidationException instance
+   * @returns A structured ErrorDto for the response
    */
   private handleValidationException(exception: ValidationException): ErrorDto {
     const r = exception.getResponse() as {
@@ -104,8 +106,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       statusCode,
       error: STATUS_CODES[statusCode],
-      errorCode:
-        Object.keys(ErrorCode)[Object.values(ErrorCode).indexOf(r.errorCode)],
+      errorCode: r.errorCode,
       message:
         r.message ||
         this.i18n.t(r.errorCode as unknown as keyof I18nTranslations),

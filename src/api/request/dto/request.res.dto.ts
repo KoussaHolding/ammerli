@@ -10,39 +10,69 @@ import {
 import { Exclude, Expose } from 'class-transformer';
 import { RequestStatusEnum } from '../enums/request-status.enum';
 import { RequestTypeEnum } from '../enums/request-type.enum';
+import { CreateRequestDto } from './create-request.dto';
 
+/**
+ * Complete response payload for a service request.
+ * Contains both client-provided data and system-assigned state (id, status, driver).
+ */
 @Exclude()
-export class RequestResDto {
+export class RequestResDto extends CreateRequestDto {
+  /**
+   * Unique identifier for the request.
+   * @example "uuid-v4-string"
+   */
   @UUIDField()
   @Expose()
   id: Uuid;
 
+  /**
+   * Pickup latitude (inherited).
+   */
   @NumberField()
   @Expose()
-  pickupLat: number;
+  declare pickupLat: number;
 
+  /**
+   * Pickup longitude (inherited).
+   */
   @NumberField()
   @Expose()
-  pickupLng: number;
+  declare pickupLng: number;
 
+  /**
+   * Requested quantity (inherited).
+   */
   @NumberField()
   @Expose()
-  quantity: number;
+  declare quantity: number;
 
+  /**
+   * Current lifecycle stage of the request.
+   */
   @EnumField(() => RequestStatusEnum)
   @Expose()
   status: RequestStatusEnum;
 
+  /**
+   * Type of request (inherited).
+   */
   @EnumField(() => RequestTypeEnum, {
     description: 'Type of the request',
   })
   @Expose()
-  type: RequestTypeEnum;
+  declare type: RequestTypeEnum;
 
+  /**
+   * Profile of the client who made the request.
+   */
   @ClassField(() => UserResDto)
   @Expose()
   user: UserResDto;
 
+  /**
+   * UUID of the driver currently assigned to this request, if any.
+   */
   @UUIDField({ nullable: true })
   @Expose()
   driverId: Uuid | null;

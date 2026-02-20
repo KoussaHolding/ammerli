@@ -1,14 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppLogger } from 'src/logger/logger.service';
-import { TrackingGateway } from './tracking.getway';
+import { TrackingGateway } from './tracking.gateway';
 import { TrackingService } from './tracking.service';
-import { Socket } from 'socket.io';
+import { Socket, Server } from 'socket.io';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 
 describe('TrackingGateway', () => {
   let gateway: TrackingGateway;
   let trackingService: jest.Mocked<TrackingService>;
   let logger: jest.Mocked<AppLogger>;
   let socket: jest.Mocked<Socket>;
+  let server: jest.Mocked<Server>;
+  let jwtService: jest.Mocked<JwtService>;
+  let configService: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
     const trackingServiceMock = {
@@ -16,7 +21,15 @@ describe('TrackingGateway', () => {
     };
     const loggerMock = {
       setContext: jest.fn(),
+      log: jest.fn(),
+      warn: jest.fn(),
       error: jest.fn(),
+    };
+    const jwtServiceMock = {
+        verify: jest.fn(),
+    };
+    const configServiceMock = {
+        get: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -24,20 +37,32 @@ describe('TrackingGateway', () => {
         TrackingGateway,
         { provide: TrackingService, useValue: trackingServiceMock },
         { provide: AppLogger, useValue: loggerMock },
+        { provide: JwtService, useValue: jwtServiceMock },
+        { provide: ConfigService, useValue: configServiceMock },
       ],
     }).compile();
 
     gateway = module.get<TrackingGateway>(TrackingGateway);
     trackingService = module.get(TrackingService);
     logger = module.get(AppLogger);
+    jwtService = module.get(JwtService);
+    configService = module.get(ConfigService);
 
     socket = {
       id: 'socket-1',
-      handshake: { query: {} },
+      handshake: { query: {}, auth: {} },
       data: {},
       disconnect: jest.fn(),
       emit: jest.fn(),
+      join: jest.fn(),
     } as unknown as jest.Mocked<Socket>;
+
+    server = {
+      to: jest.fn().mockReturnThis(),
+      emit: jest.fn(),
+    } as unknown as jest.Mocked<Server>;
+
+    gateway.server = server;
   });
 
   it('should be defined', () => {
@@ -45,33 +70,40 @@ describe('TrackingGateway', () => {
   });
 
   describe('handleConnection', () => {
-    it('should disconnect if driverId is missing', () => {
+    it('should disconnect if no driverId or token', async () => {
       socket.handshake.query = {};
-      gateway.handleConnection(socket);
+      await gateway.handleConnection(socket);
       expect(socket.disconnect).toHaveBeenCalled();
     });
 
-    it('should store driverId and socket if driverId is present', () => {
+    it('should join driver room if driverId is present', async () => {
       const driverId = 'driver-1';
       socket.handshake.query = { driverId };
-      gateway.handleConnection(socket);
+      await gateway.handleConnection(socket);
       expect(socket.data.driverId).toBe(driverId);
-      // Access private property for testing if needed, or rely on behavior
-      // For now we assume it stores it because we can't easily access the private map without `any` cast
-      // casting to any to check private map
-      expect((gateway as any).activeDrivers.get(driverId)).toBe(socket);
+      expect(socket.join).toHaveBeenCalledWith(`driver_${driverId}`);
+    });
+
+    it('should join user room if valid token is present', async () => {
+      const userId = 'user-1';
+      const token = 'valid-token';
+      socket.handshake.auth = { token };
+      jwtService.verify.mockReturnValue({ id: userId });
+      configService.get.mockReturnValue('secret');
+
+      await gateway.handleConnection(socket);
+      
+      expect(socket.data.userId).toBe(userId);
+      expect(socket.join).toHaveBeenCalledWith(`user_${userId}`);
     });
   });
 
   describe('handleDisconnect', () => {
-    it('should remove driver from active drivers on disconnect', () => {
+    it('should log disconnect for driver', () => {
       const driverId = 'driver-1';
-      socket.handshake.query = { driverId };
-      gateway.handleConnection(socket);
-      expect((gateway as any).activeDrivers.get(driverId)).toBe(socket);
-
+      socket.data = { driverId };
       gateway.handleDisconnect(socket);
-      expect((gateway as any).activeDrivers.has(driverId)).toBe(false);
+      expect(logger.log).toHaveBeenCalledWith(`Driver disconnected: ${driverId}`);
     });
   });
 
@@ -129,43 +161,64 @@ describe('TrackingGateway', () => {
       expect(socket.emit).toHaveBeenCalledWith('error', {
         driverId,
         message: 'Failed to update location',
+        debug: error?.message || String(error),
       });
     });
   });
 
   describe('sendAlert', () => {
-    it('should return false if driver is not connected', async () => {
-        const result = await gateway.sendAlert('unknown-driver', {});
-        expect(result).toBe(false);
-    });
-
-    it('should send alert and return true if driver is connected', async () => {
+    it('should emit new_alert to driver room', async () => {
         const driverId = 'driver-1';
-        socket.handshake.query = { driverId };
-        gateway.handleConnection(socket);
-
         const payload = { type: 'NEW_REQUEST' };
-        const result = await gateway.sendAlert(driverId, payload);
         
-        expect(result).toBe(true);
-        expect(socket.emit).toHaveBeenCalledWith('new_alert', payload);
+        await gateway.sendAlert(driverId, payload);
+        
+        expect(server.to).toHaveBeenCalledWith(`driver_${driverId}`);
+        expect(server.emit).toHaveBeenCalledWith('new_alert', payload);
     });
 
-    it('should return false and log error if emit fails', async () => {
+    it('should log error if emit fails', async () => {
         const driverId = 'driver-1';
-        socket.handshake.query = { driverId };
-        gateway.handleConnection(socket);
-        
         const error = new Error('Emit failed');
-        socket.emit.mockImplementation(() => { throw error; });
+        server.emit.mockImplementation(() => { throw error; });
 
-        const result = await gateway.sendAlert(driverId, {});
+        await gateway.sendAlert(driverId, {});
         
-        expect(result).toBe(false);
         expect(logger.error).toHaveBeenCalledWith(
             `Failed to send alert to driver ${driverId}`,
             error.stack
         );
+    });
+  });
+
+  describe('handleRequestEvents', () => {
+    it('should emit request_accepted to user room', async () => {
+        const userId = 'user-1';
+        const msg = { status: 'ACCEPTED', user: { id: userId } };
+        
+        await gateway.handleRequestEvents(msg);
+
+        expect(server.to).toHaveBeenCalledWith(`user_${userId}`);
+        expect(server.emit).toHaveBeenCalledWith('request_accepted', msg);
+    });
+
+    it('should not emit if status is unknown', async () => {
+        const userId = 'user-1';
+        const msg = { status: 'UNKNOWN', user: { id: userId } };
+        
+        await gateway.handleRequestEvents(msg);
+
+        expect(server.to).not.toHaveBeenCalled();
+        expect(server.emit).not.toHaveBeenCalled();
+    });
+    it('should emit ride_started to user room when status is IN_PROGRESS', async () => {
+        const userId = 'user-1';
+        const msg = { status: 'IN_PROGRESS', user: { id: userId } };
+        
+        await gateway.handleRequestEvents(msg);
+
+        expect(server.to).toHaveBeenCalledWith(`user_${userId}`);
+        expect(server.emit).toHaveBeenCalledWith('ride_started', msg);
     });
   });
 });

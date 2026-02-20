@@ -21,6 +21,13 @@ import { UpdateUserReqDto } from './dto/update-user.req.dto';
 import { UserResDto } from './dto/user.res.dto';
 import { UserService } from './user.service';
 
+/**
+ * Controller handling user-related API endpoints.
+ * Provides functionality for profile management, user listing, and password changes.
+ *
+ * @version 1
+ * @tag users
+ */
 @ApiTags('users')
 @Controller({
   path: 'users',
@@ -29,6 +36,12 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  /**
+   * Retrieves the profile of the currently authenticated user.
+   *
+   * @param userId - Extracted from the validated JWT token
+   * @returns The current user's profile
+   */
   @ApiAuth({
     type: UserResDto,
     summary: 'Get current user',
@@ -38,6 +51,12 @@ export class UserController {
     return await this.userService.findOne(userId);
   }
 
+  /**
+   * Lists all users with offset-based pagination.
+   *
+   * @param reqDto - Filtering and pagination parameters
+   * @returns A paginated list of users
+   */
   @Get()
   @ApiAuth({
     type: UserResDto,
@@ -50,6 +69,13 @@ export class UserController {
     return await this.userService.findAll(reqDto);
   }
 
+  /**
+   * Fetches users with cursor-based pagination.
+   * Optimized for infinite scroll or "load more" UI patterns.
+   *
+   * @param reqDto - Cursor (after/before) and limit
+   * @returns A cursor-paginated list of users
+   */
   @Get('/load-more')
   @ApiAuth({
     type: UserResDto,
@@ -63,6 +89,14 @@ export class UserController {
     return await this.userService.loadMoreUsers(reqDto);
   }
 
+  /**
+   * Retrieves a specific user's details by their UUID.
+   *
+   * @param id - The UUID of the target user
+   * @returns The user's profile details
+   * @throws {BadRequestException} If ID format is invalid
+   * @throws {NotFoundException} If user does not exist
+   */
   @Get(':id')
   @ApiAuth({ type: UserResDto, summary: 'Find user by id' })
   @ApiParam({ name: 'id', type: 'String' })
@@ -70,6 +104,13 @@ export class UserController {
     return await this.userService.findOne(id);
   }
 
+  /**
+   * Updates an existing user's profile information.
+   *
+   * @param id - The UUID of the user to update
+   * @param reqDto - Partial user data (bio, image)
+   * @returns A promise that resolves when the update is complete
+   */
   @Patch(':id')
   @ApiAuth({ type: UserResDto, summary: 'Update user' })
   @ApiParam({ name: 'id', type: 'String' })
@@ -80,6 +121,12 @@ export class UserController {
     return this.userService.update(id, reqDto);
   }
 
+  /**
+   * Soft deletes a user account from the system.
+   *
+   * @param id - The UUID of the user to delete
+   * @returns A promise that resolves upon successful deletion
+   */
   @Delete(':id')
   @ApiAuth({
     summary: 'Delete user',
@@ -90,6 +137,12 @@ export class UserController {
     return this.userService.remove(id);
   }
 
+  /**
+   * Initiates the password change process for the current user.
+   *
+   * @returns A placeholder string for the change-password flow
+   * @todo Implement actual password change logic
+   */
   @ApiAuth()
   @Post('me/change-password')
   async changePassword() {

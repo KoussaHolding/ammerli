@@ -1,4 +1,5 @@
 export enum DriverTypeEnum {
-  WHOLESALE = 'WHOLESALE',
-  RETAIL = 'RETAIL',
+  MOTORCYCLE = 'MOTORCYCLE',
+  CAR = 'CAR',
+  TRUCK = 'TRUCK',
 }

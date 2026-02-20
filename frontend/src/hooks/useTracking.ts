@@ -6,6 +6,7 @@ export const useTracking = () => {
   const { user, accessToken } = useAuthStore();
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [alerts, setAlerts] = useState<any[]>([]);
 
   useEffect(() => {
