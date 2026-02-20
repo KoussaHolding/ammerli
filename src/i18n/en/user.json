@@ -4,11 +4,13 @@
     "email": "User already exists"
   },
   "validation": {
-    "is_empty": "Field is required"
+    "is_empty": "Field is required",
+    "is_invalid": "Field is invalid"
   },
   "error": {
     "username_or_email_exists": "Username or email already exists",
     "email_exists": "Account with this email already exists",
+    "phone_exists": "User with this phone number already exists",
     "not_found": "User not found",
     "invalid_password": "Invalid password",
     "invalid_token": "Invalid token"

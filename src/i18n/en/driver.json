@@ -1,0 +1,9 @@
+{
+  "error": {
+    "not_found": "Driver profile not found in repository or cache",
+    "offline": "Driver metadata expired (Ghost driver)",
+    "busy": "Driver is already locked by another order",
+    "too_far": "Driver is outside the allowed matching range",
+    "not_authorized": "Driver not authorized for this action"
+  }
+}

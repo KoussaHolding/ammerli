@@ -1,0 +1,8 @@
+{
+  "error": {
+    "lock_busy": "فشل في الحصول على قفل المورد",
+    "redis_failure": "فشل في الاتصال بـ Redis أو انتهت مهلة الأمر",
+    "redlock_client_not_found": "لم يتم العثور على مثيل Redlock",
+    "redis_script_not_loaded": "لم يتم العثور على نص Redis Lua أو لم يتم تحميله"
+  }
+}

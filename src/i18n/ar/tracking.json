@@ -1,0 +1,8 @@
+{
+  "error": {
+    "service_not_initialized": "خدمة التتبع لم يتم تهيئتها",
+    "not_identified": "الاتصال غير معروف",
+    "invalid_payload": "بيانات الموقع غير صالحة",
+    "update_failed": "فشل في تحديث الموقع"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "validation": {
+    "error": "خطأ في التحقق من البيانات"
+  },
+  "error": {
+    "internal_server_error": "حدث خطأ داخلي في الخادم",
+    "entity_not_found": "الكيان غير موجود",
+    "unexpected": "حدث خطأ غير متوقع في التطبيق"
+  }
+}

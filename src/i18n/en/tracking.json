@@ -1,0 +1,8 @@
+{
+  "error": {
+    "service_not_initialized": "TrackingService is not initialized",
+    "not_identified": "Connection not identified",
+    "invalid_payload": "Invalid location payload",
+    "update_failed": "Failed to update location"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "error": {
+    "not_found": "Request not found in cache",
+    "not_available": "Request is not available for acceptance (likely already accepted or expired)",
+    "id_not_found": "Request with ID not found in database"
+  }
+}

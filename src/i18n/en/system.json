@@ -1,0 +1,8 @@
+{
+  "error": {
+    "lock_busy": "Redlock failed to acquire resource lock",
+    "redis_failure": "Redis connection failure or command timeout",
+    "redlock_client_not_found": "Redlock client instance not found",
+    "redis_script_not_loaded": "Redis Lua script not found or not loaded"
+  }
+}
