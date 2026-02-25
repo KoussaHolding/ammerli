@@ -1,0 +1,9 @@
+{
+  "error": {
+    "not_found": "Profil conducteur non trouvé dans le dépôt ou le cache",
+    "offline": "Métadonnées du conducteur expirées (conducteur fantôme)",
+    "busy": "Le conducteur est déjà verrouillé par une autre commande",
+    "too_far": "Le conducteur est en dehors de la zone de correspondance autorisée",
+    "not_authorized": "Conducteur non autorisé pour cette action"
+  }
+}

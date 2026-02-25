@@ -1,0 +1,11 @@
+{
+  "validation": {
+    "error": "Erreur de validation",
+    "isPhoneNumber": "Numéro de téléphone invalide"
+  },
+  "error": {
+    "internal_server_error": "Une erreur interne du serveur est survenue",
+    "unexpected": "Une erreur inattendue de l'application est survenue",
+    "entity_not_found": "Ressource non trouvée"
+  }
+}

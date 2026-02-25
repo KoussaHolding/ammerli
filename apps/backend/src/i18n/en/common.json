@@ -1,0 +1,11 @@
+{
+  "validation": {
+    "error": "Common validation",
+    "isPhoneNumber": "Invalid phone number"
+  },
+  "error": {
+    "internal_server_error": "Has occurred an internal server error",
+    "unexpected": "An unexpected application error occurred",
+    "entity_not_found": "Entity not found"
+  }
+}

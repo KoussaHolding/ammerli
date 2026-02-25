@@ -3,10 +3,10 @@ services:
     container_name: ammerli
     restart: always
     build:
-      context: .
+      context: apps/backend
       dockerfile: Dockerfile
     env_file:
-      - .env.docker
+      - apps/backend/.env.docker
     ports:
       - '3000:3000'
     networks:
@@ -47,7 +47,7 @@ services:
   ammerli-maildev:
     container_name: ammerli-mail-dev
     build:
-      context: .
+      context: apps/backend
       dockerfile: maildev.Dockerfile
     ports:
       - ${MAIL_CLIENT_PORT}:1080

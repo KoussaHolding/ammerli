@@ -1,0 +1,8 @@
+{
+  "error": {
+    "lock_busy": "Redlock n'a pas réussi à acquérir le verrou de ressource",
+    "redis_failure": "Échec de la connexion Redis ou délai d'attente de commande dépassé",
+    "redlock_client_not_found": "Instance du client Redlock non trouvée",
+    "redis_script_not_loaded": "Script Lua Redis non trouvé ou non chargé"
+  }
+}

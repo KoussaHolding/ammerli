@@ -1,0 +1,11 @@
+{
+  "validation": {
+    "error": "خطأ في التحقق من البيانات",
+    "isPhoneNumber": "رقم الهاتف غير صحيح"
+  },
+  "error": {
+    "internal_server_error": "حدث خطأ داخلي في الخادم",
+    "entity_not_found": "الكيان غير موجود",
+    "unexpected": "حدث خطأ غير متوقع في التطبيق"
+  }
+}

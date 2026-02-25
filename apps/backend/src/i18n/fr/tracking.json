@@ -1,0 +1,8 @@
+{
+  "error": {
+    "service_not_initialized": "Le service de suivi n'est pas initialisé",
+    "not_identified": "Connexion non identifiée",
+    "invalid_payload": "Données de localisation invalides",
+    "update_failed": "Échec de la mise à jour de la localisation"
+  }
+}
