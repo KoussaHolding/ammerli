@@ -175,4 +175,22 @@ export class TrackingService {
     }
     return onlineDrivers;
   }
+  /**
+   * Sets a driver as AVAILABLE in the metadata cache.
+   */
+  async setDriverOnline(driverId: string): Promise<void> {
+    await this.driverMetadataService.updateMetadata(driverId, {
+      status: 'AVAILABLE',
+      lastJobTimestamp: Date.now(), // Reset idle time
+    });
+  }
+
+  /**
+   * Sets a driver as OFFLINE in the metadata cache.
+   */
+  async setDriverOffline(driverId: string): Promise<void> {
+    await this.driverMetadataService.updateMetadata(driverId, {
+      status: 'OFFLINE',
+    });
+  }
 }

@@ -9,7 +9,6 @@ import { RequestService } from './request.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderModule } from '../order/order.module';
 import { TrackingModule } from '../tracking/tracking.module';
-import { RequestDispatchedConsumer } from './consumers/request-dispatched.consumer';
 import { RequestEntity } from './entities/request.entity';
 
 @Module({
@@ -24,7 +23,6 @@ import { RequestEntity } from './entities/request.entity';
   providers: [
     RequestService,
     RequestCacheRepository,
-    RequestDispatchedConsumer,
   ],
   exports: [RequestService],
 })

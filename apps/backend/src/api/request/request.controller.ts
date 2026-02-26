@@ -48,7 +48,7 @@ export class RequestController {
     @Body() createRequestDto: CreateRequestDto,
     @CurrentUser() user: UserResDto,
   ): Promise<RequestResDto> {
-    return this.requestService.createRequest(createRequestDto, user);
+    return this.requestService.createRequest(user.id as Uuid, createRequestDto, user);
   }
 
   /**

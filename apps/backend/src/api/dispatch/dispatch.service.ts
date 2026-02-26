@@ -16,7 +16,6 @@ import { RequestService } from '../request/request.service';
 import { DriverLocationResDto } from '../tracking/dto/driver-location.res.dto';
 
 import { Uuid } from '@/common/types/common.type';
-import { OrderService } from '../order/order.service';
 import { MatchingService } from './matching.service';
 
 /**
@@ -33,7 +32,6 @@ export class DispatchService {
     private readonly amqpConnection: AmqpConnection,
     private readonly requestService: RequestService,
     private readonly matchingService: MatchingService,
-    private readonly orderService: OrderService,
     @InjectRepository(DriverEntity)
     private readonly driverRepo: Repository<DriverEntity>,
     private readonly logger: AppLogger,
@@ -196,13 +194,8 @@ export class DispatchService {
     request.status = RequestStatusEnum.ACCEPTED;
     request.driverId = driverId;
 
-    await this.requestService.updateRequest(requestId, request);
 
-    await this.orderService.createOrder(
-      requestId,
-      driverId,
-      request.user.id as Uuid,
-    );
+    await this.requestService.updateRequest(requestId, request);
 
     await this.amqpConnection.publish('requests', 'request.accepted', request);
 

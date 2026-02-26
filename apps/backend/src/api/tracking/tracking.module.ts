@@ -8,6 +8,8 @@ import { TrackingGateway } from './tracking.gateway';
 import { TrackingService } from './tracking.service';
 
 import { DriverModule } from '../driver/driver.module';
+import { RabbitMqLibModule } from '@/libs/rabbitMq/rabbitMq.module';
+import { RequestDispatchedConsumer } from './consumers/request-dispatched.consumer';
 
 @Module({
   imports: [
@@ -15,8 +17,14 @@ import { DriverModule } from '../driver/driver.module';
     forwardRef(() => DriverModule),
     ConfigModule,
     JwtModule.register({}),
+    RabbitMqLibModule,
   ],
-  providers: [DriverMetadataCacheRepository, TrackingService, TrackingGateway],
+  providers: [
+    DriverMetadataCacheRepository,
+    TrackingService,
+    TrackingGateway,
+    RequestDispatchedConsumer,
+  ],
   exports: [TrackingGateway, TrackingService],
 })
 export class TrackingModule {}

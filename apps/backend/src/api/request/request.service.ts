@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import Redlock from 'redlock';
 import { v4 as uuidv4 } from 'uuid';
+import { UseDistributedLock } from '@/libs/redis/decorators/lock.decorator';
 
 import { Uuid } from '@/common/types/common.type';
 import { ErrorMessageConstants } from '@/constants/error-code.constant';
@@ -24,8 +26,6 @@ import { applyFiltersToQueryBuilder } from '@/utils/query-filter.util';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { OrderStatusEnum } from '../order/entities/order.entity';
-import { OrderService } from '../order/order.service';
 import { RequestEntity } from './entities/request.entity';
 
 /**
@@ -42,7 +42,7 @@ export class RequestService {
     private readonly cacheRepo: RequestCacheRepository,
     @InjectRepository(RequestEntity)
     private readonly requestRepo: Repository<RequestEntity>,
-    private readonly orderService: OrderService,
+    @Inject('REDLOCK_CLIENT') private readonly redlock: Redlock,
     private readonly logger: AppLogger,
   ) {
     this.logger.setContext(RequestService.name);
@@ -59,10 +59,18 @@ export class RequestService {
    * @example
    * const request = await requestService.createRequest(createDto, currentUser);
    */
+  @UseDistributedLock({ key: 'locks:request:create:{0}', ttl: 5000 })
   async createRequest(
+    userId: string,
     dto: CreateRequestDto,
     user: UserResDto,
   ): Promise<RequestResDto> {
+    const active = await this.findActiveRequest(userId as Uuid);
+    if (active) {
+      this.logger.log(`Returning active request for user ${userId}: ${active.id}`);
+      return active;
+    }
+
     const requestId = uuidv4() as Uuid;
 
     const existing = await this.getRequestFromCache(requestId);
@@ -215,19 +223,6 @@ export class RequestService {
 
     await this.requestRepo.save(requestEntity);
 
-    let orderStatus: OrderStatusEnum;
-    if (status === RequestStatusEnum.COMPLETED) {
-      orderStatus = OrderStatusEnum.DELIVERED;
-    } else if (
-      status === RequestStatusEnum.CANCELLED ||
-      status === RequestStatusEnum.EXPIRED
-    ) {
-      orderStatus = OrderStatusEnum.CANCELLED;
-    }
-
-    if (orderStatus) {
-      await this.orderService.updateStatus(requestId as Uuid, orderStatus);
-    }
 
     const routingKeyMap: Partial<Record<RequestStatusEnum, string>> = {
       [RequestStatusEnum.ACCEPTED]: RabbitMqRoutingKey.REQUEST_ACCEPTED,

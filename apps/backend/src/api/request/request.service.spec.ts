@@ -10,6 +10,7 @@ import { RequestEntity } from './entities/request.entity';
 import { RequestStatusEnum } from './enums/request-status.enum';
 import { RequestCacheRepository } from './request-cache.repository';
 import { RequestService } from './request.service';
+import { ErrorMessageConstants } from '@/constants/error-code.constant';
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'test-uuid'),
@@ -56,6 +57,7 @@ describe('RequestService', () => {
           useValue: { create: jest.fn(), save: jest.fn(), findOne: jest.fn() },
         },
         { provide: OrderService, useValue: { updateStatus: jest.fn() } },
+        { provide: 'REDLOCK_CLIENT', useValue: { using: jest.fn((keys, ttl, cb) => cb()) } },
       ],
     }).compile();
 
@@ -83,7 +85,7 @@ describe('RequestService', () => {
       const existingRequest = { id: 'existing-id' as Uuid } as any;
       cacheRepo.get.mockResolvedValue(existingRequest);
 
-      const result = await service.createRequest(createRequestDto, user);
+      const result = await service.createRequest(user.id, createRequestDto, user);
 
       expect(result).toBe(existingRequest);
       expect(cacheRepo.set).not.toHaveBeenCalled();
@@ -93,7 +95,7 @@ describe('RequestService', () => {
     it('should create new request, save to cache, and publish event', async () => {
       cacheRepo.get.mockResolvedValue(null);
 
-      const result = await service.createRequest(createRequestDto, user);
+      const result = await service.createRequest(user.id, createRequestDto, user);
 
       expect(result).toHaveProperty('id');
       expect(result.status).toBe(RequestStatusEnum.SEARCHING);
@@ -114,6 +116,18 @@ describe('RequestService', () => {
           status: RequestStatusEnum.SEARCHING,
         }),
       );
+    });
+
+    it("should return active request if findActiveRequest returns one (idempotency)", async () => {
+      const activeRequest = { id: "active-id" as Uuid } as any;
+      cacheRepo.getUserActiveRequest.mockResolvedValue("active-id" as Uuid);
+      cacheRepo.get.mockResolvedValue(activeRequest);
+
+      const result = await service.createRequest(user.id, createRequestDto, user);
+
+      expect(result).toBe(activeRequest);
+      expect(cacheRepo.getUserActiveRequest).toHaveBeenCalledWith(user.id);
+      expect(cacheRepo.set).not.toHaveBeenCalled();
     });
   });
 
@@ -147,7 +161,7 @@ describe('RequestService', () => {
       cacheRepo.get.mockResolvedValue(null);
 
       await expect(service.updateRequest('req-1', {})).rejects.toThrow(
-        'Request with ID req-1 not found',
+        ErrorMessageConstants.REQUEST.ID_NOT_FOUND,
       );
     });
 

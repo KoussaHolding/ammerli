@@ -48,6 +48,7 @@ export class TrackingGateway
     if (driverId) {
       client.data.driverId = driverId;
       await client.join(`driver_${driverId}`); // Join driver room
+      await this.trackingService.setDriverOnline(driverId);
       this.logger.log(`${LogConstants.TRACKING.DRIVER_CONNECTED}: ${driverId}`);
       return;
     }
@@ -80,6 +81,7 @@ export class TrackingGateway
   handleDisconnect(client: Socket): void {
     const driverId = client.data?.driverId as string | undefined;
     if (driverId) {
+      void this.trackingService.setDriverOffline(driverId);
       this.logger.log(
         `${LogConstants.TRACKING.DRIVER_DISCONNECTED}: ${driverId}`,
       );
@@ -124,9 +126,6 @@ export class TrackingGateway
       if (eventName) {
         // Broadcast to all instances
         this.server.to(`user_${userId}`).emit(eventName, msg);
-        this.logger.log(
-          `${LogConstants.TRACKING.EMITTED_EVENT} ${eventName} to user_${userId}`,
-        );
       }
     }
 
@@ -141,7 +140,7 @@ export class TrackingGateway
    */
   @SubscribeMessage('update_location')
   async handleLocationUpdate(
-    @MessageBody() data: { lat: number; lng: number },
+    @MessageBody() payload: any,
     @ConnectedSocket() client: Socket,
   ) {
     const driverId = client.data?.driverId as string | undefined;
@@ -152,7 +151,17 @@ export class TrackingGateway
       return;
     }
 
-    const { lat, lng } = data ?? {};
+    // Handle clients like Postman that send stringified JSON
+    let parsedData = payload;
+    if (typeof payload === 'string') {
+      try {
+        parsedData = JSON.parse(payload);
+      } catch (e) {
+        // Leave as is, let validation fail
+      }
+    }
+
+    const { lat, lng } = parsedData ?? {};
     if (lat == null || lng == null) {
       client.emit('error', {
         message: ErrorMessageConstants.TRACKING.INVALID_PAYLOAD,

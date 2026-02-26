@@ -4,7 +4,7 @@
   "description": "Ammerli Platform Monorepo",
   "private": true,
   "workspaces": [
-    "apps/*",
+    "apps/*"
   ],
   "scripts": {
     "backend": "npm run -w @ammerli/backend",
