@@ -18,7 +18,7 @@ export class RequestCacheRepository {
    * @param requestId - Unique identifier of the request.
    * @returns The Redis key string.
    */
-  private getKey(requestId: string): string {
+  public getKey(requestId: string): string {
     return `${RedisConstants.KEYS.REQUESTS_INDEX}:${requestId}`;
   }
 

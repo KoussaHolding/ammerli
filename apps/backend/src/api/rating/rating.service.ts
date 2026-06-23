@@ -45,7 +45,7 @@ export class RatingService {
       throw new BadRequestException('You can only rate your own requests');
     }
 
-    if (request.status !== RequestStatusEnum.COMPLETED) {
+    if (request.status !== RequestStatusEnum.DELIVERED) {
       throw new BadRequestException('Request is not completed yet');
     }
 

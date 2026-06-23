@@ -60,6 +60,21 @@ services:
       - ammerli-network
 
   # -------------------
+  # RabbitMQ
+  # -------------------
+  ammerli-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ammerli-rabbitmq
+    restart: always
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - ammerli-rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - ammerli-network
+
+  # -------------------
   # NestJS app
   # -------------------
   ammerli:
@@ -81,6 +96,7 @@ services:
 volumes:
   ammerli-db-data:
   ammerli-redis-data:
+  ammerli-rabbitmq-data:
 
 # -------------------
 # Networks

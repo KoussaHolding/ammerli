@@ -1,11 +1,15 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { RedisScriptService } from '@/libs/redis/redis-script.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cache } from 'cache-manager';
-import { IMetricProvider, MetricFilters } from './interfaces/metric-provider.interface';
-import { UserMetricProvider } from './providers/user-metric.provider';
+import { StatisticsQueryDto } from './dtos/statistics-query.dto';
+import {
+  IMetricProvider,
+  MetricFilters,
+} from './interfaces/metric-provider.interface';
 import { OrderMetricProvider } from './providers/order-metric.provider';
 import { RevenueMetricProvider } from './providers/revenue-metric.provider';
-import { StatisticsQueryDto } from './dtos/statistics-query.dto';
+import { UserMetricProvider } from './providers/user-metric.provider';
 
 /**
  * Service orchestrating the computation of various system statistics.
@@ -22,28 +26,40 @@ export class StatisticsService {
     private readonly userProvider: UserMetricProvider,
     private readonly orderProvider: OrderMetricProvider,
     private readonly revenueProvider: RevenueMetricProvider,
+    private readonly redisScriptService: RedisScriptService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
-    this.providers = [this.userProvider, this.orderProvider, this.revenueProvider];
+    this.providers = [
+      this.userProvider,
+      this.orderProvider,
+      this.revenueProvider,
+    ];
   }
 
   /**
    * Aggregates all registered metrics into a single dashboard summary.
    * Leverages caching (1 hour) to reduce DB load.
-   * 
+   *
    * @param query - Filtering and granularity options.
    * @returns A consolidated object containing all metrics.
    */
-  async getDashboardSummary(query: StatisticsQueryDto): Promise<Record<string, any>> {
+  async getDashboardSummary(
+    query: StatisticsQueryDto,
+  ): Promise<Record<string, any>> {
     const cacheKey = `${this.CACHE_PREFIX}dashboard:${JSON.stringify(query)}`;
-    const cachedData = await this.cacheManager.get<Record<string, any>>(cacheKey);
+    const cachedData =
+      await this.cacheManager.get<Record<string, any>>(cacheKey);
 
     if (cachedData) {
-      this.logger.debug(`Returning cached dashboard summary for key: ${cacheKey}`);
+      this.logger.debug(
+        `Returning cached dashboard summary for key: ${cacheKey}`,
+      );
       return cachedData;
     }
 
-    this.logger.log(`Generating dashboard summary with filters: ${JSON.stringify(query)}`);
+    this.logger.log(
+      `Generating dashboard summary with filters: ${JSON.stringify(query)}`,
+    );
 
     const filters: MetricFilters = {
       startDate: query.startDate ? new Date(query.startDate) : undefined,
@@ -58,7 +74,7 @@ export class StatisticsService {
     );
 
     const data = results.reduce((acc, curr) => ({ ...acc, ...curr }), {});
-    
+
     await this.cacheManager.set(cacheKey, data, this.CACHE_TTL * 1000);
     return data;
   }
@@ -66,7 +82,7 @@ export class StatisticsService {
   /**
    * Retrieves a specific metric by its provider name.
    * Leverages caching (1 hour).
-   * 
+   *
    * @param name - The name of the metric provider (e.g., 'users', 'revenue').
    * @param query - Filtering options.
    * @returns the computed metric for the provider.
@@ -93,7 +109,7 @@ export class StatisticsService {
     };
 
     const data = await provider.compute(filters);
-    
+
     await this.cacheManager.set(cacheKey, data, this.CACHE_TTL * 1000);
     return data;
   }
@@ -103,18 +119,17 @@ export class StatisticsService {
    */
   async clearCache(): Promise<void> {
     this.logger.log('Invalidating all statistics cache entries...');
-    // Note: cache-manager-ioredis-yet supports store specific methods.
-    // For simplicity with standard Cache interface, we clear known keys or use store methods if available.
-    if ('store' in this.cacheManager && (this.cacheManager as any).store.keys) {
-      const keys = await (this.cacheManager as any).store.keys(`${this.CACHE_PREFIX}*`);
-      for (const key of keys) {
-        await this.cacheManager.del(key);
-      }
-    } else {
-        // Fallback for stores that don't support keys() - though ioredis-yet should.
-        // We could also just reset the whole cache if it's dedicated to statistics, 
-        // but it's global. So we'll try to be selective.
-        this.logger.warn('Cache store does not support wildcard deletion; performing full cache reset if applicable or skipping.');
+    try {
+      // Accessing the redis client from the statistics service might require a different approach
+      // if it's using cache-manager, but we have RedisScriptService globally.
+      // However, StatisticsService doesn't have it injected. I'll add it.
+      await this.redisScriptService.eval(
+        'CLEAR_CACHE_BY_PATTERN',
+        [],
+        [`${this.CACHE_PREFIX}*`],
+      );
+    } catch (error) {
+      this.logger.error(`Failed to clear statistics cache: ${error.message}`);
     }
   }
 }

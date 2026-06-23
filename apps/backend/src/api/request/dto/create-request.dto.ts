@@ -2,7 +2,10 @@ import {
   EnumField,
   NumberField,
   StringFieldOptional,
+  BooleanFieldOptional,
+  NumberFieldOptional
 } from '@/decorators/field.decorators';
+import { IsOptional } from 'class-validator';
 import { RequestTypeEnum } from '../enums/request-type.enum';
 
 /**
@@ -78,4 +81,34 @@ export class CreateRequestDto {
     description: 'ID of the selected product',
   })
   productId?: string;
+
+  @StringFieldOptional({ description: 'Delivery address string' })
+  deliveryAddress?: string;
+
+  @IsOptional()
+  tankerDetails?: Record<string, any>;
+
+  @IsOptional()
+  bottledItems?: Record<string, any>;
+
+  @BooleanFieldOptional({ description: 'Whether order is scheduled' })
+  isScheduled?: boolean;
+
+  @StringFieldOptional({ description: 'Scheduled date string' })
+  scheduledDate?: string;
+
+  @StringFieldOptional({ description: 'Scheduled time string' })
+  scheduledTime?: string;
+
+  @NumberFieldOptional({ description: 'Subtotal' })
+  subtotal?: number;
+
+  @NumberFieldOptional({ description: 'Delivery fee' })
+  deliveryFee?: number;
+
+  @NumberFieldOptional({ description: 'Total price' })
+  totalPrice?: number;
+
+  @StringFieldOptional({ description: 'Cancel reason' })
+  cancelReason?: string;
 }

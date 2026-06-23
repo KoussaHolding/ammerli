@@ -2,7 +2,14 @@ import { ProductEntity } from '@/api/product/entities/product.entity';
 import { WilayaEntity } from '@/api/wilaya/entities/wilaya.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 /**
  * Entity representing a specific pricing rule for a product in a wilaya.
@@ -17,7 +24,9 @@ export class PricingRuleEntity extends AbstractEntity {
   /**
    * Unique identifier for the pricing rule.
    */
-  @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_pricing_rule_id' })
+  @PrimaryGeneratedColumn('uuid', {
+    primaryKeyConstraintName: 'PK_pricing_rule_id',
+  })
   id!: Uuid;
 
   /**

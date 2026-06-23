@@ -29,7 +29,7 @@ export class DriverEntity extends AbstractEntity {
   @Column({
     type: dbEnumType,
     enum: DriverTypeEnum,
-    default: DriverTypeEnum.MOTORCYCLE,
+    default: DriverTypeEnum.BOTTLED,
   })
   type: DriverTypeEnum;
 
@@ -38,4 +38,22 @@ export class DriverEntity extends AbstractEntity {
 
   @Column({ type: 'int', default: 0 })
   totalJobs: number;
+
+  @Column({ nullable: true })
+  truckPlate: string;
+
+  @Column({ type: 'int', nullable: true })
+  capacity: number;
+
+  @Column({ nullable: true })
+  waterType: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  walletBalance: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  totalEarnings: number;
+
+  @Column({ type: 'json', nullable: true })
+  inventory: Record<string, any>;
 }

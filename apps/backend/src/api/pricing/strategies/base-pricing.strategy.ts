@@ -1,9 +1,9 @@
+import { ProductEntity } from '@/api/product/entities/product.entity';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PricingContext } from '../interfaces/pricing-context.interface';
 import { IPricingStrategy } from '../interfaces/pricing-strategy.interface';
-import { ProductEntity } from '@/api/product/entities/product.entity';
 
 /**
  * Default pricing strategy that returns the product's base price.
@@ -30,9 +30,13 @@ export class BasePricingStrategy implements IPricingStrategy {
    * @throws {NotFoundException} If product is not found.
    */
   async calculate(context: PricingContext): Promise<number | null> {
-    const product = await this.productRepository.findOneBy({ id: context.productId as any });
+    const product = await this.productRepository.findOneBy({
+      id: context.productId as any,
+    });
     if (!product) {
-      throw new NotFoundException(`Product with ID ${context.productId} not found`);
+      throw new NotFoundException(
+        `Product with ID ${context.productId} not found`,
+      );
     }
     return product.basePrice;
   }

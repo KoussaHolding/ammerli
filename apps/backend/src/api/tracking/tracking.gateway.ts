@@ -130,8 +130,21 @@ export class TrackingGateway
     }
 
     // Forward to Driver (if needed)
-    if (driverId) {
-      // Logic for driver updates
+    if (status === 'DISPATCHED' && msg.matchedDrivers) {
+      msg.matchedDrivers.forEach((match: any) => {
+        const dId = match.driverId;
+        if (dId) {
+          this.server.to(`driver_${dId}`).emit('dispatch_offer', msg);
+        }
+      });
+    } else if (driverId) {
+      const driverEventMap: Record<string, string> = {
+        CANCELLED: 'request_cancelled',
+      };
+      const dEvent = driverEventMap[status];
+      if (dEvent) {
+        this.server.to(`driver_${driverId}`).emit(dEvent, msg);
+      }
     }
   }
 

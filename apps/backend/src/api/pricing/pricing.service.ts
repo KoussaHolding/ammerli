@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { BasePricingStrategy } from './strategies/base-pricing.strategy';
-import { WilayaPricingStrategy } from './strategies/wilaya-pricing.strategy';
 import { PricingContext } from './interfaces/pricing-context.interface';
 import { IPricingStrategy } from './interfaces/pricing-strategy.interface';
+import { BasePricingStrategy } from './strategies/base-pricing.strategy';
+import { WilayaPricingStrategy } from './strategies/wilaya-pricing.strategy';
 
 /**
  * Service responsible for calculating prices using an aggregate of strategies.
@@ -34,17 +34,23 @@ export class PricingService {
    * @throws {Error} If no price could be calculated by any strategy.
    */
   async calculatePrice(context: PricingContext): Promise<number> {
-    this.logger.debug(`Calculating price for context: ${JSON.stringify(context)}`);
+    this.logger.debug(
+      `Calculating price for context: ${JSON.stringify(context)}`,
+    );
 
     for (const strategy of this.strategies) {
       const price = await strategy.calculate(context);
       if (price !== null) {
-        this.logger.debug(`Strategy '${strategy.name}' returned price: ${price}`);
+        this.logger.debug(
+          `Strategy '${strategy.name}' returned price: ${price}`,
+        );
         return price;
       }
     }
 
-    this.logger.error(`No pricing strategy could calculate a price for context: ${JSON.stringify(context)}`);
+    this.logger.error(
+      `No pricing strategy could calculate a price for context: ${JSON.stringify(context)}`,
+    );
     throw new Error('Could not calculate price for the given context');
   }
 }

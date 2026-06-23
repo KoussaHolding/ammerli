@@ -1,7 +1,8 @@
+import { Uuid } from '@/common/types/common.type';
 import { ErrorMessageConstants } from '@/constants/error-code.constant';
 import { LogConstants } from '@/constants/log.constant';
 import { RedisLibsService } from '@/libs/redis/redis-libs.service';
-import { Uuid } from '@/common/types/common.type';
+import { RedisScriptService } from '@/libs/redis/redis-script.service';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -24,6 +25,7 @@ describe('DispatchService', () => {
   let requestService: jest.Mocked<RequestService>;
   let matchingService: jest.Mocked<MatchingService>;
   let logger: jest.Mocked<AppLogger>;
+  let redisScriptService: jest.Mocked<any>;
 
   beforeEach(async () => {
     const redisLibsServiceMock = {
@@ -51,6 +53,9 @@ describe('DispatchService', () => {
       warn: jest.fn(),
       debug: jest.fn(),
     };
+    redisScriptService = {
+      eval: jest.fn().mockResolvedValue({ success: true }),
+    } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -64,6 +69,7 @@ describe('DispatchService', () => {
           provide: getRepositoryToken(DriverEntity),
           useValue: { findOne: jest.fn() },
         },
+        { provide: RedisScriptService, useValue: redisScriptService },
         { provide: OrderService, useValue: { createOrder: jest.fn() } },
       ],
     }).compile();
@@ -179,15 +185,16 @@ describe('DispatchService', () => {
     it('should successfully refuse a request', async () => {
       driverRepo.findOne.mockResolvedValue(driverEntity);
 
-      const result = await service.refuseRequest(requestId as Uuid, userId as Uuid);
+      const result = await service.refuseRequest(
+        requestId as Uuid,
+        userId as Uuid,
+      );
 
       expect(result).toEqual({ success: true });
-      expect(requestService.updateRequest).toHaveBeenCalledWith(
-        requestId,
-        expect.objectContaining({
-          status: RequestStatusEnum.SEARCHING,
-          refusedDrivers: expect.arrayContaining([driverId]),
-        }),
+      expect(redisScriptService.eval).toHaveBeenCalledWith(
+        'REFUSE_REQUEST',
+        [expect.stringContaining(requestId)],
+        [driverId, RequestStatusEnum.SEARCHING, RequestStatusEnum.DISPATCHED],
       );
       expect(amqpConnection.publish).toHaveBeenCalledWith(
         'requests',
@@ -202,28 +209,31 @@ describe('DispatchService', () => {
     it('should throw 404 if driver not found', async () => {
       driverRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.refuseRequest(requestId as Uuid, userId as Uuid)).rejects.toMatchObject({
+      await expect(
+        service.refuseRequest(requestId as Uuid, userId as Uuid),
+      ).rejects.toMatchObject({
         errorCode: ErrorMessageConstants.DRIVER.NOT_FOUND,
       });
     });
 
     it('should throw 404 if request not found', async () => {
       driverRepo.findOne.mockResolvedValue(driverEntity);
-      requestService.getRequestFromCache.mockResolvedValue(null);
+      redisScriptService.eval.mockResolvedValue(-1);
 
-      await expect(service.refuseRequest(requestId as Uuid, userId as Uuid)).rejects.toMatchObject({
+      await expect(
+        service.refuseRequest(requestId as Uuid, userId as Uuid),
+      ).rejects.toMatchObject({
         errorCode: ErrorMessageConstants.REQUEST.NOT_FOUND,
       });
     });
 
     it('should throw 400 if request is already ACCEPTED', async () => {
       driverRepo.findOne.mockResolvedValue(driverEntity);
-      requestService.getRequestFromCache.mockResolvedValue({
-        ...requestDto,
-        status: RequestStatusEnum.ACCEPTED,
-      } as any);
+      redisScriptService.eval.mockResolvedValue(0);
 
-      await expect(service.refuseRequest(requestId as Uuid, userId as Uuid)).rejects.toMatchObject({
+      await expect(
+        service.refuseRequest(requestId as Uuid, userId as Uuid),
+      ).rejects.toMatchObject({
         errorCode: ErrorMessageConstants.REQUEST.NOT_AVAILABLE,
       });
     });

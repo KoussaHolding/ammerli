@@ -76,6 +76,42 @@ export class RequestEntity extends AbstractEntity {
   @Column({ type: 'float', nullable: true })
   pickupLng: number;
 
+  @Column({ nullable: true })
+  deliveryAddress: string;
+
+  /**
+   * Type of request (BOTTLED or TANKER).
+   */
+  @Column({ type: 'varchar', nullable: true })
+  type: string;
+
+  @Column({ type: 'json', nullable: true })
+  tankerDetails: Record<string, any>;
+
+  @Column({ type: 'json', nullable: true })
+  bottledItems: Record<string, any>;
+
+  @Column({ type: 'boolean', default: false })
+  isScheduled: boolean;
+
+  @Column({ nullable: true })
+  scheduledDate: string;
+
+  @Column({ nullable: true })
+  scheduledTime: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  subtotal: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  deliveryFee: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  totalPrice: number;
+
+  @Column({ nullable: true })
+  cancelReason: string;
+
   /**
    * FK to the target Product being requested.
    */

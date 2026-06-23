@@ -104,7 +104,7 @@ async function bootstrap() {
     );
   }
 
-  await app.listen(configService.getOrThrow('app.port', { infer: true }));
+  await app.listen(configService.getOrThrow('app.port', { infer: true }), '0.0.0.0');
 
   console.info(`Server running on ${await app.getUrl()}`);
 

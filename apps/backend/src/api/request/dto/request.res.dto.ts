@@ -62,6 +62,36 @@ export class RequestResDto extends CreateRequestDto {
   @Expose()
   declare type: RequestTypeEnum;
 
+  @Expose()
+  declare deliveryAddress?: string;
+
+  @Expose()
+  declare tankerDetails?: Record<string, any>;
+
+  @Expose()
+  declare bottledItems?: Record<string, any>;
+
+  @Expose()
+  declare isScheduled?: boolean;
+
+  @Expose()
+  declare scheduledDate?: string;
+
+  @Expose()
+  declare scheduledTime?: string;
+
+  @Expose()
+  declare subtotal?: number;
+
+  @Expose()
+  declare deliveryFee?: number;
+
+  @Expose()
+  declare totalPrice?: number;
+
+  @Expose()
+  declare cancelReason?: string;
+
   /**
    * Profile of the client who made the request.
    */

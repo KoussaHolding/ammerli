@@ -40,7 +40,7 @@ export class CreateUserReqDto {
    * @example "+1234567890"
    */
   @StringField()
-  @IsPhoneNumber()
+  @IsPhoneNumber('DZ')
   phone: string;
 
   /**

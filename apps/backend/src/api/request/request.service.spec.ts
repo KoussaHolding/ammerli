@@ -1,4 +1,6 @@
 import { Uuid } from '@/common/types/common.type';
+import { ErrorMessageConstants } from '@/constants/error-code.constant';
+import { RedisScriptService } from '@/libs/redis/redis-script.service';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -10,7 +12,6 @@ import { RequestEntity } from './entities/request.entity';
 import { RequestStatusEnum } from './enums/request-status.enum';
 import { RequestCacheRepository } from './request-cache.repository';
 import { RequestService } from './request.service';
-import { ErrorMessageConstants } from '@/constants/error-code.constant';
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'test-uuid'),
@@ -21,6 +22,7 @@ describe('RequestService', () => {
   let amqpConnection: jest.Mocked<AmqpConnection>;
   let cacheRepo: jest.Mocked<RequestCacheRepository>;
   let logger: jest.Mocked<AppLogger>;
+  let redisScriptService: jest.Mocked<any>;
 
   beforeEach(async () => {
     const amqpConnectionMock = {
@@ -33,6 +35,7 @@ describe('RequestService', () => {
       setUserActiveRequest: jest.fn(),
       removeUserActiveRequest: jest.fn(),
       getUserActiveRequest: jest.fn(),
+      getKey: jest.fn((id) => `requests:${id}`),
     };
     const loggerMock = {
       log: jest.fn(),
@@ -45,6 +48,9 @@ describe('RequestService', () => {
       errorStructured: jest.fn(),
       debugStructured: jest.fn(),
     };
+    redisScriptService = {
+      eval: jest.fn().mockResolvedValue({}),
+    } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,7 +63,11 @@ describe('RequestService', () => {
           useValue: { create: jest.fn(), save: jest.fn(), findOne: jest.fn() },
         },
         { provide: OrderService, useValue: { updateStatus: jest.fn() } },
-        { provide: 'REDLOCK_CLIENT', useValue: { using: jest.fn((keys, ttl, cb) => cb()) } },
+        { provide: RedisScriptService, useValue: redisScriptService },
+        {
+          provide: 'REDLOCK_CLIENT',
+          useValue: { using: jest.fn((keys, ttl, cb) => cb()) },
+        },
       ],
     }).compile();
 
@@ -83,11 +93,17 @@ describe('RequestService', () => {
 
     it('should return existing request if found in cache', async () => {
       const existingRequest = { id: 'existing-id' as Uuid } as any;
-      cacheRepo.get.mockResolvedValue(existingRequest);
+      redisScriptService.eval.mockResolvedValue(
+        JSON.stringify(existingRequest),
+      );
 
-      const result = await service.createRequest(user.id, createRequestDto, user);
+      const result = await service.createRequest(
+        user.id,
+        createRequestDto,
+        user,
+      );
 
-      expect(result).toBe(existingRequest);
+      expect(result).toMatchObject(existingRequest);
       expect(cacheRepo.set).not.toHaveBeenCalled();
       expect(amqpConnection.publish).not.toHaveBeenCalled();
     });
@@ -95,38 +111,60 @@ describe('RequestService', () => {
     it('should create new request, save to cache, and publish event', async () => {
       cacheRepo.get.mockResolvedValue(null);
 
-      const result = await service.createRequest(user.id, createRequestDto, user);
+      const requestPayload = {
+        id: 'test-uuid',
+        status: RequestStatusEnum.SEARCHING,
+        user,
+        ...createRequestDto,
+      };
 
-      expect(result).toHaveProperty('id');
+      redisScriptService.eval.mockResolvedValue(JSON.stringify(requestPayload));
+
+      const result = await service.createRequest(
+        user.id,
+        createRequestDto,
+        user,
+      );
+
+      expect(result.id).toBe('test-uuid');
       expect(result.status).toBe(RequestStatusEnum.SEARCHING);
-      expect(result.user).toBe(user);
+      expect(result.user.id).toBe(user.id);
 
-      expect(cacheRepo.set).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: expect.any(String),
-          status: RequestStatusEnum.SEARCHING,
-        }),
-        300,
+      expect(redisScriptService.eval).toHaveBeenCalledWith(
+        'CREATE_REQUEST',
+        expect.any(Array),
+        expect.any(Array),
       );
       expect(amqpConnection.publish).toHaveBeenCalledWith(
         'requests',
         'request.created',
         expect.objectContaining({
-          id: expect.any(String),
+          id: 'test-uuid',
           status: RequestStatusEnum.SEARCHING,
         }),
       );
     });
 
-    it("should return active request if findActiveRequest returns one (idempotency)", async () => {
-      const activeRequest = { id: "active-id" as Uuid } as any;
-      cacheRepo.getUserActiveRequest.mockResolvedValue("active-id" as Uuid);
-      cacheRepo.get.mockResolvedValue(activeRequest);
+    it('should return active request if findActiveRequest returns one (idempotency)', async () => {
+      const activeRequest = {
+        id: 'active-id' as Uuid,
+        status: RequestStatusEnum.SEARCHING,
+      } as any;
 
-      const result = await service.createRequest(user.id, createRequestDto, user);
+      redisScriptService.eval.mockResolvedValue(JSON.stringify(activeRequest));
 
-      expect(result).toBe(activeRequest);
-      expect(cacheRepo.getUserActiveRequest).toHaveBeenCalledWith(user.id);
+      const result = await service.createRequest(
+        user.id,
+        createRequestDto,
+        user,
+      );
+
+      expect(result.id).toBe('active-id');
+      expect(redisScriptService.eval).toHaveBeenCalledWith(
+        'CREATE_REQUEST',
+        expect.any(Array),
+        expect.any(Array),
+      );
       expect(cacheRepo.set).not.toHaveBeenCalled();
     });
   });
@@ -135,9 +173,8 @@ describe('RequestService', () => {
     it('should return request from repository', async () => {
       const request = { id: 'req-1' } as any;
       cacheRepo.get.mockResolvedValue(request);
-
       const result = await service.getRequestFromCache('req-1');
-      expect(result).toBe(request);
+      expect(result).toEqual(request);
       expect(cacheRepo.get).toHaveBeenCalledWith('req-1');
     });
   });

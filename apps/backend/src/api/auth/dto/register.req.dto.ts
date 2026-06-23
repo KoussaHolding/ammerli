@@ -17,7 +17,7 @@ export class RegisterReqDto {
    * @example "+213000000000"
    */
   @StringField()
-  @IsPhoneNumber()
+  @IsPhoneNumber('DZ')
   phone!: string;
 
   /**

@@ -1,4 +1,4 @@
 export enum RequestTypeEnum {
-  BYLITER = 'BYLITER',
-  BYTRUCK = 'BYTRUCK',
+  BOTTLED = 'BOTTLED',
+  TANKER = 'TANKER',
 }

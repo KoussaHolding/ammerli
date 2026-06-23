@@ -1,9 +1,11 @@
+import { RedisScriptService } from '@/libs/redis/redis-script.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Test, TestingModule } from '@nestjs/testing';
-import { StatisticsService } from './statistics.service';
-import { UserMetricProvider } from './providers/user-metric.provider';
+import { StatisticsQueryDto } from './dtos/statistics-query.dto';
 import { OrderMetricProvider } from './providers/order-metric.provider';
 import { RevenueMetricProvider } from './providers/revenue-metric.provider';
-import { StatisticsQueryDto } from './dtos/statistics-query.dto';
+import { UserMetricProvider } from './providers/user-metric.provider';
+import { StatisticsService } from './statistics.service';
 
 describe('StatisticsService', () => {
   let service: StatisticsService;
@@ -18,12 +20,30 @@ describe('StatisticsService', () => {
 
   const mockOrderProvider = {
     name: 'orders',
-    compute: jest.fn().mockResolvedValue({ total: 5, byStatus: {}, fulfillmentTimeAvgMinutes: 20, volumeTrend: [] }),
+    compute: jest.fn().mockResolvedValue({
+      total: 5,
+      byStatus: {},
+      fulfillmentTimeAvgMinutes: 20,
+      volumeTrend: [],
+    }),
   };
 
   const mockRevenueProvider = {
     name: 'revenue',
-    compute: jest.fn().mockResolvedValue({ totalGross: 1000, averageOrderValue: 200, trend: [] }),
+    compute: jest.fn().mockResolvedValue({
+      totalGross: 1000,
+      averageOrderValue: 200,
+      trend: [],
+    }),
+  };
+  const mockRedisScriptService = {
+    eval: jest.fn().mockResolvedValue({}),
+  };
+
+  const mockCacheManager = {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+    del: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -33,6 +53,8 @@ describe('StatisticsService', () => {
         { provide: UserMetricProvider, useValue: mockUserProvider },
         { provide: OrderMetricProvider, useValue: mockOrderProvider },
         { provide: RevenueMetricProvider, useValue: mockRevenueProvider },
+        { provide: RedisScriptService, useValue: mockRedisScriptService },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
       ],
     }).compile();
 
@@ -60,10 +82,10 @@ describe('StatisticsService', () => {
     });
 
     it('should pass filters to providers', async () => {
-      const query: StatisticsQueryDto = { 
-        startDate: '2023-01-01', 
-        endDate: '2023-01-31', 
-        granularity: 'monthly' 
+      const query: StatisticsQueryDto = {
+        startDate: '2023-01-01',
+        endDate: '2023-01-31',
+        granularity: 'monthly',
       };
       await service.getDashboardSummary(query);
 
@@ -82,14 +104,18 @@ describe('StatisticsService', () => {
       const query: StatisticsQueryDto = { granularity: 'daily' };
       const result = await service.getMetricByName('revenue', query);
 
-      expect(result).toEqual({ totalGross: 1000, averageOrderValue: 200, trend: [] });
+      expect(result).toEqual({
+        totalGross: 1000,
+        averageOrderValue: 200,
+        trend: [],
+      });
       expect(revenueProvider.compute).toHaveBeenCalled();
     });
 
     it('should throw error if provider not found', async () => {
       const query: StatisticsQueryDto = { granularity: 'daily' };
       await expect(service.getMetricByName('invalid', query)).rejects.toThrow(
-        "Metric provider 'invalid' not found"
+        "Metric provider 'invalid' not found",
       );
     });
   });

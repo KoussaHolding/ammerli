@@ -1,28 +1,27 @@
-import { Inject, Injectable } from '@nestjs/common';
-import Redlock from 'redlock';
+import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { UseDistributedLock } from '@/libs/redis/decorators/lock.decorator';
 
+import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorMessageConstants } from '@/constants/error-code.constant';
 import { LogConstants } from '@/constants/log.constant';
+import { RedisConstants } from '@/constants/redis.constants';
 import {
   RabbitMqExchange,
   RabbitMqRoutingKey,
 } from '@/libs/rabbitMq/domain-events';
+import { RedisScriptService } from '@/libs/redis/redis-script.service';
+import { paginate } from '@/utils/offset-pagination';
+import { applyFiltersToQueryBuilder } from '@/utils/query-filter.util';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { plainToInstance } from 'class-transformer';
 import { AppLogger } from 'src/logger/logger.service';
 import { UserResDto } from '../user/dto/user.res.dto';
 import { CreateRequestDto } from './dto/create-request.dto';
+import { ListRequestReqDto } from './dto/list-request.req.dto';
 import { RequestResDto } from './dto/request.res.dto';
 import { RequestStatusEnum } from './enums/request-status.enum';
 import { RequestCacheRepository } from './request-cache.repository';
-import { ListRequestReqDto } from './dto/list-request.req.dto';
-import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
-import { plainToInstance } from 'class-transformer';
-import { paginate } from '@/utils/offset-pagination';
-import { applyFiltersToQueryBuilder } from '@/utils/query-filter.util';
-
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -42,7 +41,7 @@ export class RequestService {
     private readonly cacheRepo: RequestCacheRepository,
     @InjectRepository(RequestEntity)
     private readonly requestRepo: Repository<RequestEntity>,
-    @Inject('REDLOCK_CLIENT') private readonly redlock: Redlock,
+    private readonly redisScriptService: RedisScriptService,
     private readonly logger: AppLogger,
   ) {
     this.logger.setContext(RequestService.name);
@@ -59,23 +58,12 @@ export class RequestService {
    * @example
    * const request = await requestService.createRequest(createDto, currentUser);
    */
-  @UseDistributedLock({ key: 'locks:request:create:{0}', ttl: 5000 })
   async createRequest(
     userId: string,
     dto: CreateRequestDto,
     user: UserResDto,
   ): Promise<RequestResDto> {
-    const active = await this.findActiveRequest(userId as Uuid);
-    if (active) {
-      this.logger.log(`Returning active request for user ${userId}: ${active.id}`);
-      return active;
-    }
-
     const requestId = uuidv4() as Uuid;
-
-    const existing = await this.getRequestFromCache(requestId);
-    if (existing) return existing;
-
     const payload: RequestResDto = {
       id: requestId,
       status: RequestStatusEnum.SEARCHING,
@@ -84,17 +72,33 @@ export class RequestService {
       ...dto,
     };
 
-    this.logger.log(`${LogConstants.REQUEST.RECEIVED}: ${payload.id}`);
-    await this.setRequestInCache(payload, 300);
-    await this.cacheRepo.setUserActiveRequest(user.id, payload.id, 300);
+    const result = await this.redisScriptService.eval(
+      'CREATE_REQUEST',
+      [
+        this.cacheRepo['getKey'](requestId), // Accessing private for demo or move getKey to public
+        `${RedisConstants.KEYS.REQUESTS_INDEX}:user:${userId}`,
+      ],
+      [requestId, JSON.stringify(payload), 300, userId],
+    );
+
+    const finalPayload = plainToInstance(RequestResDto, JSON.parse(result));
+
+    if (finalPayload.id !== requestId) {
+      this.logger.log(
+        `Returning active request for user ${userId}: ${finalPayload.id}`,
+      );
+      return finalPayload;
+    }
+
+    this.logger.log(`${LogConstants.REQUEST.RECEIVED}: ${finalPayload.id}`);
 
     await this.amqpConnection.publish(
       RabbitMqExchange.REQUESTS,
       RabbitMqRoutingKey.REQUEST_CREATED,
-      payload,
+      finalPayload,
     );
 
-    return payload;
+    return finalPayload;
   }
 
   /**
@@ -131,8 +135,6 @@ export class RequestService {
       metaDto,
     );
   }
-
-
 
   /**
    * Retrieves a live request from the Redis cache.
@@ -223,12 +225,11 @@ export class RequestService {
 
     await this.requestRepo.save(requestEntity);
 
-
     const routingKeyMap: Partial<Record<RequestStatusEnum, string>> = {
       [RequestStatusEnum.ACCEPTED]: RabbitMqRoutingKey.REQUEST_ACCEPTED,
       [RequestStatusEnum.ARRIVED]: RabbitMqRoutingKey.DRIVER_ARRIVED,
-      [RequestStatusEnum.IN_PROGRESS]: RabbitMqRoutingKey.RIDE_STARTED,
-      [RequestStatusEnum.COMPLETED]: RabbitMqRoutingKey.RIDE_COMPLETED,
+      [RequestStatusEnum.DELIVERING]: RabbitMqRoutingKey.RIDE_STARTED,
+      [RequestStatusEnum.DELIVERED]: RabbitMqRoutingKey.RIDE_COMPLETED,
       [RequestStatusEnum.CANCELLED]: RabbitMqRoutingKey.REQUEST_CANCELLED,
       [RequestStatusEnum.EXPIRED]: RabbitMqRoutingKey.REQUEST_CANCELLED,
     };
@@ -244,7 +245,7 @@ export class RequestService {
     }
 
     if (
-      status === RequestStatusEnum.COMPLETED ||
+      status === RequestStatusEnum.DELIVERED ||
       status === RequestStatusEnum.CANCELLED ||
       status === RequestStatusEnum.EXPIRED
     ) {
@@ -273,7 +274,7 @@ export class RequestService {
     const activeStatus = [
       RequestStatusEnum.ACCEPTED,
       RequestStatusEnum.ARRIVED,
-      RequestStatusEnum.IN_PROGRESS,
+      RequestStatusEnum.DELIVERING,
     ];
 
     const request = await this.requestRepo.findOne({

@@ -4,6 +4,7 @@ import { RedisConstants } from '@/constants/redis.constants';
 import { Instrument } from '@/decorators/instrument.decorator';
 import { AppException } from '@/exceptions/app.exception';
 import { RedisLibsService } from '@/libs/redis/redis-libs.service';
+import { RedisScriptService } from '@/libs/redis/redis-script.service';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -34,6 +35,7 @@ export class DispatchService {
     private readonly matchingService: MatchingService,
     @InjectRepository(DriverEntity)
     private readonly driverRepo: Repository<DriverEntity>,
+    private readonly redisScriptService: RedisScriptService,
     private readonly logger: AppLogger,
   ) {
     this.logger.setContext(this.constructor.name);
@@ -179,23 +181,29 @@ export class DispatchService {
     }
     const driverId = driver.id;
 
-    const request = await this.requestService.getRequestFromCache(requestId);
-    if (!request) {
+    const requestKey = `${RedisConstants.KEYS.REQUESTS_INDEX}:${requestId}`;
+
+    const result = await this.redisScriptService.eval(
+      'ACCEPT_REQUEST',
+      [requestKey],
+      [
+        driverId,
+        RequestStatusEnum.ACCEPTED,
+        RequestStatusEnum.SEARCHING,
+        RequestStatusEnum.DISPATCHED,
+      ],
+    );
+
+    if (result === -1) {
       throw new AppException(ErrorMessageConstants.REQUEST.NOT_FOUND, 404);
     }
 
-    if (
-      request.status !== RequestStatusEnum.DISPATCHED &&
-      request.status !== RequestStatusEnum.SEARCHING
-    ) {
+    if (result === 0) {
       throw new AppException(ErrorMessageConstants.REQUEST.NOT_AVAILABLE, 400);
     }
 
-    request.status = RequestStatusEnum.ACCEPTED;
-    request.driverId = driverId;
-
-
-    await this.requestService.updateRequest(requestId, request);
+    // Success - fetch updated request for event emission
+    const request = await this.requestService.getRequestFromCache(requestId);
 
     await this.amqpConnection.publish('requests', 'request.accepted', request);
 
@@ -224,33 +232,21 @@ export class DispatchService {
       throw new AppException(ErrorMessageConstants.DRIVER.NOT_FOUND, 404);
     }
 
-    const request = await this.requestService.getRequestFromCache(requestId);
-    if (!request) {
+    const requestKey = `${RedisConstants.KEYS.REQUESTS_INDEX}:${requestId}`;
+
+    const result = await this.redisScriptService.eval(
+      'REFUSE_REQUEST',
+      [requestKey],
+      [driver.id, RequestStatusEnum.SEARCHING, RequestStatusEnum.DISPATCHED],
+    );
+
+    if (result === -1) {
       throw new AppException(ErrorMessageConstants.REQUEST.NOT_FOUND, 404);
     }
 
-    // Refusal is only valid if request is still being matched or specifically offered
-    if (
-      request.status !== RequestStatusEnum.DISPATCHED &&
-      request.status !== RequestStatusEnum.SEARCHING
-    ) {
+    if (result === 0) {
       throw new AppException(ErrorMessageConstants.REQUEST.NOT_AVAILABLE, 400);
     }
-
-    // Initialize refusedDrivers if it doesn't exist (safety)
-    if (!request.refusedDrivers) {
-      request.refusedDrivers = [];
-    }
-
-    // Add driver to refused list if not already present
-    if (!request.refusedDrivers.includes(driver.id)) {
-      request.refusedDrivers.push(driver.id);
-    }
-
-    // Transition back to SEARCHING so matching loop can re-evaluate
-    request.status = RequestStatusEnum.SEARCHING;
-
-    await this.requestService.updateRequest(requestId, request);
 
     // Emit event for potential tracking/logging consumers
     await this.amqpConnection.publish('requests', 'request.refused', {

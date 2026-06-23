@@ -1,9 +1,9 @@
+import { Uuid } from '@/common/types/common.type';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PricingContext } from './interfaces/pricing-context.interface';
 import { PricingService } from './pricing.service';
 import { BasePricingStrategy } from './strategies/base-pricing.strategy';
 import { WilayaPricingStrategy } from './strategies/wilaya-pricing.strategy';
-import { PricingContext } from './interfaces/pricing-context.interface';
-import { Uuid } from '@/common/types/common.type';
 
 describe('PricingService', () => {
   let service: PricingService;
@@ -43,11 +43,14 @@ describe('PricingService', () => {
   });
 
   it('should return price from WilayaPricingStrategy if it returns a value', async () => {
-    const context: PricingContext = { productId: 'p1' as Uuid, wilayaId: 'w1' as Uuid };
+    const context: PricingContext = {
+      productId: 'p1' as Uuid,
+      wilayaId: 'w1' as Uuid,
+    };
     const expectedPrice = 150;
 
     jest.spyOn(wilayaStrategy, 'calculate').mockResolvedValue(expectedPrice);
-    
+
     const result = await service.calculatePrice(context);
 
     expect(result).toBe(expectedPrice);
@@ -57,7 +60,10 @@ describe('PricingService', () => {
   });
 
   it('should fallback to BasePricingStrategy if WilayaPricingStrategy returns null', async () => {
-    const context: PricingContext = { productId: 'p1' as Uuid, wilayaId: 'w1' as Uuid };
+    const context: PricingContext = {
+      productId: 'p1' as Uuid,
+      wilayaId: 'w1' as Uuid,
+    };
     const expectedPrice = 100;
 
     jest.spyOn(wilayaStrategy, 'calculate').mockResolvedValue(null);
@@ -76,6 +82,8 @@ describe('PricingService', () => {
     jest.spyOn(wilayaStrategy, 'calculate').mockResolvedValue(null);
     jest.spyOn(baseStrategy, 'calculate').mockResolvedValue(null);
 
-    await expect(service.calculatePrice(context)).rejects.toThrow('Could not calculate price for the given context');
+    await expect(service.calculatePrice(context)).rejects.toThrow(
+      'Could not calculate price for the given context',
+    );
   });
 });

@@ -1,5 +1,4 @@
 export enum DriverTypeEnum {
-  MOTORCYCLE = 'MOTORCYCLE',
-  CAR = 'CAR',
-  TRUCK = 'TRUCK',
+  BOTTLED = 'BOTTLED',
+  TANKER = 'TANKER',
 }

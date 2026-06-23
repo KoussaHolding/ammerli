@@ -95,6 +95,14 @@ export class DriverService {
     return driver.toDto(DriverResDto);
   }
 
+  async findByUserId(userId: Uuid): Promise<DriverResDto> {
+    const driver = await this.driverRepository.findOneOrFail({
+      where: { user: { id: userId } },
+      relations: ['user'],
+    });
+    return driver.toDto(DriverResDto);
+  }
+
   async update(id: Uuid, updateDto: UpdateDriverReqDto) {
     const driver = await this.driverRepository.findOneOrFail({ where: { id } });
 

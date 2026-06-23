@@ -49,6 +49,15 @@ export class DriverController {
     return await this.driverService.findAll(reqDto);
   }
 
+  @Get('me')
+  @ApiAuth({
+    type: DriverResDto,
+    summary: 'Get current authenticated driver profile',
+  })
+  async getMyProfile(@CurrentUser() user: any): Promise<DriverResDto> {
+    return await this.driverService.findByUserId(user.id);
+  }
+
   @Get('nearby')
   @ApiPublic() // Or ApiAuth, but public is easier for now. Let's stick to Public for 'Uber-like' feel before login? No, dashboard requires login.
   // Actually, dashboard is protected.

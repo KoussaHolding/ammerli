@@ -9,7 +9,7 @@ export class LoginReqDto {
    * User's registered phone number.
    * @example "+213000000000"
    */
-  @IsPhoneNumber()
+  @IsPhoneNumber('DZ')
   @StringField()
   phone!: string;
 

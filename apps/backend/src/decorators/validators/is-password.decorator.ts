@@ -12,7 +12,7 @@ export function IsPassword(
       options: validationOptions,
       validator: {
         validate(value: string) {
-          return /^[\d!#$%&*@A-Z^a-z]*$/.test(value);
+          return /^[\x20-\x7E]+$/.test(value); // Allow any printable ASCII characters
         },
         defaultMessage() {
           return `$property is invalid`;

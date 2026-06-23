@@ -44,15 +44,17 @@ describe('RequestController', () => {
         id: 'req-1' as Uuid,
         status: RequestStatusEnum.SEARCHING,
         user,
+        driverId: null,
         ...createRequestDto,
       };
 
-      service.createRequest.mockResolvedValue(expectedResult);
+      service.createRequest.mockResolvedValue(expectedResult as any);
 
       const result = await controller.create(createRequestDto, user);
 
       expect(result).toBe(expectedResult);
       expect(service.createRequest).toHaveBeenCalledWith(
+        user.id,
         createRequestDto,
         user,
       );

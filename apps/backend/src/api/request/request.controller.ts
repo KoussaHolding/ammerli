@@ -125,7 +125,7 @@ export class RequestController {
   async start(@Param('id') id: string) {
     return await this.requestService.finalizeRequest(
       id,
-      RequestStatusEnum.IN_PROGRESS,
+      RequestStatusEnum.DELIVERING,
     );
   }
 
@@ -145,7 +145,7 @@ export class RequestController {
   async complete(@Param('id') id: string) {
     return await this.requestService.finalizeRequest(
       id,
-      RequestStatusEnum.COMPLETED,
+      RequestStatusEnum.DELIVERED,
     );
   }
 
@@ -157,7 +157,7 @@ export class RequestController {
    * @returns Finalized (cancelled) request object
    */
   @Post(':id/cancel')
-  @Roles(UserRoleEnum.CLIENT)
+  @Roles(UserRoleEnum.CLIENT, UserRoleEnum.DRIVER)
   @ApiAuth({
     summary: 'Cancel a request',
     statusCode: HttpStatus.OK,
